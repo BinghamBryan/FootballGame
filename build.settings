@@ -3,10 +3,14 @@
 
 settings = {
 	
-	orientation = {
-		default = "portrait",
-		supported = { "portrait", }
-	},
+	orientation =
+        {
+            default = "landscape",
+            supported =
+            {
+                "landscapeRight", "landscapeLeft"
+            }
+        },
 	
 	iphone = {
 		plist = {
@@ -27,6 +31,11 @@ settings = {
                 }
             }
             --]]
+
+            UIAppFonts =
+                    {
+                        "Interstate.ttf"
+                    },
 		}
 	},
 	
