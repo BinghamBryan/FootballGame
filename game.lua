@@ -7,6 +7,7 @@
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
 
+local widget = require("widget")
 -- include Corona's "physics" library
 local physics = require "physics"
 physics.start(); physics.pause()
@@ -18,6 +19,8 @@ local screenW, screenH, halfW = display.contentWidth, display.contentHeight, dis
 
 local playContainers = {};
 local plays = {};
+local selectedPlays = {};
+local resultsText;
 
 --local posX, posY = 100, 200
 local sizeX, sizeY = 40, 40
@@ -60,13 +63,27 @@ local function playsListener(event)
             -- main condition: I calculated 3 areas to atract the object to the target container, 2 areas that atract it when it's 1/3 in the target and 1 area that atract it when it's 1/4 in the target
             if (((x >= ((sizeX/2) + posX - ((2/3) * sizeX))) and (y >= ((sizeY/2) + posY - ((1/3) * sizeY))) and (x <= ((sizeX/2) + posX + ((2/3) * sizeX))) and (y <= ((sizeY/2) + posY + ((1/3) * sizeY)))) or ((x >= ((sizeX/2) + posX - ((1/3) * sizeX))) and (y >= ((sizeY/2) + posY - ((2/3) * sizeY))) and (x <= ((sizeX/2) + posX + ((1/3) * sizeX))) and (y <= ((sizeY/2) + posY + ((2/3) * sizeY)))) or ((x >= ((sizeX/2) + posX - ((1/2) * sizeX))) and (y >= ((sizeY/2) + posY - ((1/2) * sizeY))) and (x <= ((sizeX/2) + posX + ((1/2) * sizeX))) and (y <= ((sizeY/2) + posY + ((1/2) * sizeY))))) then
                 self.x, self.y = posX + (sizeX/2), posY + (sizeY/2);
+                selectedPlays[i] = self;
+            else
+                --selectedPlays[i] = nil;
             end
         end
     end
 
     return true
 end
+local function onPlayBtnRelease(event)
+    local self = event.target
+    resultsText:removeSelf();
+    local playsChosen = "";
+    for i = 0, #selectedPlays do
+        if (selectedPlays[i] ~= nil) then
+            playsChosen = playsChosen .. " - " .. selectedPlays[i].name;
+        end
+    end
+    resultsText = display.newText(playsChosen, 0, 0, native.systemFont, 16)
 
+end
 -----------------------------------------------------------------------------------------
 -- BEGINNING OF YOUR IMPLEMENTATION
 --
@@ -85,30 +102,50 @@ function scene:createScene( event )
 
 
     local container = display.newRoundedRect( 100, 200, sizeX, sizeY, 3 )
+    container:setReferencePoint(display.TopLeftReferencePoint);
     container:setFillColor( 0,0,255 )
     container.strokeWidth = 3
     container:setStrokeColor(100, 100, 100)
     playContainers[0] = container;
 
     local container2 = display.newRoundedRect( 150, 200, sizeX, sizeY, 3 )
+    container2:setReferencePoint(display.TopLeftReferencePoint);
     container2:setFillColor( 0,0,255 )
     container2.strokeWidth = 3
     container2:setStrokeColor(100, 100, 100)
     playContainers[1] = container2;
 
     local container3 = display.newRoundedRect( 200, 200, sizeX, sizeY, 3 )
+    container3:setReferencePoint(display.TopLeftReferencePoint);
     container3:setFillColor( 0,0,255 )
     container3.strokeWidth = 3
     container3:setStrokeColor(100, 100, 100)
     playContainers[2] = container3;
 
+    local playButton = widget.newButton{
+        label="Run Plays",
+        labelColor = { default={255}, over={128} },
+        default="button.png",
+        over="button-over.png",
+        width=154, height=40,
+        onRelease = onPlayBtnRelease	-- event listener function
+    }
+    playButton:setReferencePoint(display.TopCenterReferencePoint)
+    playButton.x = 175
+    playButton.y = 250
+
+    resultsText = display.newText("Waiting..", 0, 0, native.systemFont, 16)
+
 
     plays[0] = display.newRoundedRect(20, 20 , playSizeW, playSizeH, 3)
     plays[0]:addEventListener("touch", playsListener)
+    plays[0].name = "run left";
     plays[1] = display.newRoundedRect(60, 20 , playSizeW, playSizeH, 3)
     plays[1]:addEventListener("touch", playsListener)
+    plays[1].name = "run center";
     plays[2] = display.newRoundedRect(100, 20 , playSizeW, playSizeH, 3)
     plays[2]:addEventListener("touch", playsListener)
+    plays[2].name = "run right";
 
     -- all display objects must be inserted into group
     group:insert( background )

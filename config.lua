@@ -1,4 +1,4 @@
---[[application = {
+application = {
 	content = {
 		width = 320,
 		height = 480, 
@@ -10,7 +10,7 @@
 		    ["@2x"] = 2,
 		}
 		--]]
-	--},
+	},
 
     --[[
     -- Push notifications
