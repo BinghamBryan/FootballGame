@@ -14,6 +14,7 @@ local widget = require "widget"
 
 -- forward declarations and other locals
 local playBtn
+local layoutBtn
 
 -- 'onRelease' event listener for playBtn
 local function onPlayBtnRelease()
@@ -21,6 +22,13 @@ local function onPlayBtnRelease()
 	storyboard.gotoScene( "game", "fade", 500 )
 	
 	return true	-- indicates successful touch
+end
+
+local function onLayoutBtnRelease()
+    -- go to game.lua scene
+    storyboard.gotoScene( "gameScreenLayout", "fade", 500 )
+
+    return true	-- indicates successful touch
 end
 
 -----------------------------------------------------------------------------------------
@@ -58,11 +66,26 @@ function scene:createScene( event )
 	playBtn:setReferencePoint( display.CenterReferencePoint )
 	playBtn.x = display.contentWidth*0.5
 	playBtn.y = display.contentHeight - 125
+
+    -- create a widget button (which will loads level1.lua on release)
+    layoutBtn = widget.newButton{
+        label="Layout View",
+        labelColor = { default={255}, over={128} },
+        default="button.png",
+        over="button-over.png",
+        width=154, height=40,
+        onRelease = onLayoutBtnRelease	-- event listener function
+    }
+
+    layoutBtn:setReferencePoint( display.CenterReferencePoint )
+    layoutBtn.x = display.contentWidth*0.5
+    layoutBtn.y = display.contentHeight - 75
 	
 	-- all display objects must be inserted into group
 	group:insert( background )
 	group:insert( titleLogo )
 	group:insert( playBtn )
+    group:instet( layoutBtn )
 end
 
 -- Called immediately after scene has moved onscreen:
@@ -88,7 +111,11 @@ function scene:destroyScene( event )
 	if playBtn then
 		playBtn:removeSelf()	-- widgets must be manually removed
 		playBtn = nil
-	end
+    end
+    if layoutBtn then
+        layoutBtn:removeSelf()
+        layoutBtn = nil;
+    end
 end
 
 -----------------------------------------------------------------------------------------
