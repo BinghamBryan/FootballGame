@@ -25,7 +25,7 @@ local function onPlayBtnRelease()
 end
 
 local function onLayoutBtnRelease()
-    -- go to game.lua scene
+    -- go to gameScreenLayout.lua scene
     storyboard.gotoScene( "gameScreenLayout", "fade", 500 )
 
     return true	-- indicates successful touch
@@ -85,7 +85,7 @@ function scene:createScene( event )
 	group:insert( background )
 	group:insert( titleLogo )
 	group:insert( playBtn )
-    group:instet( layoutBtn )
+    group:insert( layoutBtn )
 end
 
 -- Called immediately after scene has moved onscreen:

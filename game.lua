@@ -8,82 +8,128 @@ local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
 
 local widget = require("widget")
+local Navbar = require("Navbar");
+local TeamScoreArea = require("TeamScoreArea");
+local GameStatusArea = require("GameStatusArea");
+local ChoosePlaysArea = require("ChoosePlaysArea");
+local Field = require("Field");
+
 -- include Corona's "physics" library
 local physics = require "physics"
 physics.start(); physics.pause()
-
 --------------------------------------------
+--[GLOBALS]
+selectedPlays = {};
 
+--[VARIABLES]
 -- forward declarations and other locals
 local screenW, screenH, halfW = display.contentWidth, display.contentHeight, display.contentWidth*0.5
+local navbar;
+local homeTeamScoreArea;
+local awayTeamScoreArea;
+local choosePlaysArea;
+local field;
+local gameStatusArea;
 
-local playContainers = {};
-local plays = {};
-local selectedPlays = {};
-local resultsText;
+--Game variables
+local currentQuarter = 1;
+local currentTime = 900; -- in seconds
+local currentYardLine = 80;
+local homeScore = 0;
+local awayScore = 0;
+local currentDown = 1;
+local yardsToGo = 10;
+local homeTimeouts = 3;
+local awayTimeouts = 3;
+local possession = 0; -- 0 = Home, 1 = Away
 
---local posX, posY = 100, 200
-local sizeX, sizeY = 80, 80
-local playSizeW, playSizeH = 80, 80;
---local posX1, posY1 = 150, 200
---local posx, posy = 10, 50
 
-local function playsListener(event)
-    local self = event.target;
-    if event.phase == "began" then
-
-        self.markX = self.x    -- store x location of object
-        self.markY = self.y    -- store y location of object
-
-    elseif event.phase == "moved" then
-
-        local x = (event.x - event.xStart) + self.markX
-        local y = (event.y - event.yStart) + self.markY
-
-        self.x, self.y = x, y    -- move object based on calculations above
-
-        for i = 0, #playContainers do
-            local posX, posY =  playContainers[i].x, playContainers[i].y;
-
-            -- do your code to check to see if your object is in your container
-            if (((x >= ((sizeX/2) + posX - ((2/3) * sizeX))) and (y >= ((sizeY/2) + posY - ((1/3) * sizeY))) and (x <= ((sizeX/2) + posX + ((2/3) * sizeX))) and (y <= ((sizeY/2) + posY + ((1/3) * sizeY)))) or ((x >= ((sizeX/2) + posX - ((1/3) * sizeX))) and (y >= ((sizeY/2) + posY - ((2/3) * sizeY))) and (x <= ((sizeX/2) + posX + ((1/3) * sizeX))) and (y <= ((sizeY/2) + posY + ((2/3) * sizeY)))) or ((x >= ((sizeX/2) + posX - ((1/2) * sizeX))) and (y >= ((sizeY/2) + posY - ((1/2) * sizeY))) and (x <= ((sizeX/2) + posX + ((1/2) * sizeX))) and (y <= ((sizeY/2) + posY + ((1/2) * sizeY))))) then
-                playContainers[i]:setFillColor( 0,0,255 )
-            else
-                playContainers[i]:setFillColor( 255,0,0 )
-            end
-        end
-
-    elseif event.phase == "ended" then
-
-        local x = (event.x - event.xStart) + self.markX
-        local y = (event.y - event.yStart) + self.markY
-
-        for i = 0, #playContainers do
-            local posX, posY =  playContainers[i].x, playContainers[i].y;
-            -- main condition: I calculated 3 areas to atract the object to the target container, 2 areas that atract it when it's 1/3 in the target and 1 area that atract it when it's 1/4 in the target
-            if (((x >= ((sizeX/2) + posX - ((2/3) * sizeX))) and (y >= ((sizeY/2) + posY - ((1/3) * sizeY))) and (x <= ((sizeX/2) + posX + ((2/3) * sizeX))) and (y <= ((sizeY/2) + posY + ((1/3) * sizeY)))) or ((x >= ((sizeX/2) + posX - ((1/3) * sizeX))) and (y >= ((sizeY/2) + posY - ((2/3) * sizeY))) and (x <= ((sizeX/2) + posX + ((1/3) * sizeX))) and (y <= ((sizeY/2) + posY + ((2/3) * sizeY)))) or ((x >= ((sizeX/2) + posX - ((1/2) * sizeX))) and (y >= ((sizeY/2) + posY - ((1/2) * sizeY))) and (x <= ((sizeX/2) + posX + ((1/2) * sizeX))) and (y <= ((sizeY/2) + posY + ((1/2) * sizeY))))) then
-                self.x, self.y = posX + (sizeX/2), posY + (sizeY/2);
-                selectedPlays[i] = self;
-            else
-                --selectedPlays[i] = nil;
-            end
-        end
-    end
-
-    return true
-end
-local function onPlayBtnRelease(event)
-    local self = event.target
-    resultsText:removeSelf();
+--[FUNCTIONS]
+function runPlays(e)
+    local self = e.target --the button
+    --gsChoosePlaysMessageText:removeSelf();
     local playsChosen = "";
+    local gameOver = false;
+    local totalYardsGained = 0;
     for i = 0, #selectedPlays do
-        if (selectedPlays[i] ~= nil) then
-            playsChosen = playsChosen .. " - " .. selectedPlays[i].name;
+        if (selectedPlays[i] ~= nil and yardsToGo > 0) then
+            math.randomseed(os.time());
+            local yards = math.floor(selectedPlays[i].maxYards * math.random());
+            local isPositive = (selectedPlays[i].probability + math.random()) > 1;
+
+            if (isPositive) then
+                totalYardsGained = totalYardsGained + yards;
+                yardsToGo = yardsToGo - yards;
+                currentYardLine = currentYardLine - yards;
+                print("You gained " .. yards .. " Yards!");
+            else
+                print("Failed to gain yards");
+            end
+            currentDown = currentDown + 1;
+
+            --Check for first down
+            if yardsToGo < 1 then
+               break;
+            end
+
+            --check for Touchdown
+            if currentYardLine < 1 then
+                print("TOUCHDOWN!");
+                if (possession == 0) then
+                    homeScore = homeScore + 7;
+                else
+                    awayScore = awayScore + 7;
+                end
+                break;
+            end
+
+            --check time
+            currentTime = currentTime - 30;
+            if currentTime == 0 then
+                currentQuarter = currentQuarter + 1;
+                if (currentQuarter == 5) then
+                    gameOver = true;
+                    break;
+                else
+                    currentTime = 900;
+                end
+            end
         end
     end
-    resultsText = display.newText(playsChosen, 0, 0, native.systemFont, 16)
+    --Check for game over
+    if gameOver then
+        print("Game Over");
+    --Check if First Down
+    elseif (yardsToGo < 1) then
+        print("First Down! Pick 3 more plays");
+    else
+        if possession == 0 then
+            possession = 1;
+        else
+            possession = 0;
+        end
+        currentYardLine = 80;
+        print("Other team is now on offense");
+    end
+
+
+    --Reset
+    yardsToGo = 10;
+    currentDown = 1;
+
+    --update game screen
+    gameStatusArea:setTime(currentTime);
+    gameStatusArea:setQuarter(currentQuarter);
+    gameStatusArea:setDown(currentDown);
+
+    homeTeamScoreArea:setScore(homeScore);
+    awayTeamScoreArea:setScore(awayScore);
+    gameStatusArea:setTime(currentTime);
 
 end
+
+--[LISTENERS]
+
 -----------------------------------------------------------------------------------------
 -- BEGINNING OF YOUR IMPLEMENTATION
 --
@@ -96,491 +142,42 @@ end
 function scene:createScene( event )
     local group = self.view
 
-    local container = display.newRoundedRect( 100, 200, sizeX, sizeY, 3 )
-    container:setReferencePoint(display.TopLeftReferencePoint);
-    container:setFillColor( 0,0,255 )
-    container.strokeWidth = 3
-    container:setStrokeColor(100, 100, 100)
-    playContainers[0] = container;
-
-    local container2 = display.newRoundedRect( 150, 200, sizeX, sizeY, 3 )
-    container2:setReferencePoint(display.TopLeftReferencePoint);
-    container2:setFillColor( 0,0,255 )
-    container2.strokeWidth = 3
-    container2:setStrokeColor(100, 100, 100)
-    playContainers[1] = container2;
-
-    local container3 = display.newRoundedRect( 200, 200, sizeX, sizeY, 3 )
-    container3:setReferencePoint(display.TopLeftReferencePoint);
-    container3:setFillColor( 0,0,255 )
-    container3.strokeWidth = 3
-    container3:setStrokeColor(100, 100, 100)
-    playContainers[2] = container3;
-
-    local playButton = widget.newButton{
-        label="Run Plays",
-        labelColor = { default={255}, over={128} },
-        default="button.png",
-        over="button-over.png",
-        width=154, height=40,
-        onRelease = onPlayBtnRelease	-- event listener function
-    }
-    playButton:setReferencePoint(display.TopCenterReferencePoint)
-    playButton.x = 175
-    playButton.y = 250
-
-    resultsText = display.newText("Waiting..", 0, 0, native.systemFont, 16)
-
-
-    plays[0] = display.newRoundedRect(20, 20 , playSizeW, playSizeH, 3)
-    plays[0]:addEventListener("touch", playsListener)
-    plays[0].name = "run left";
-    plays[1] = display.newRoundedRect(60, 20 , playSizeW, playSizeH, 3)
-    plays[1]:addEventListener("touch", playsListener)
-    plays[1].name = "run center";
-    plays[2] = display.newRoundedRect(100, 20 , playSizeW, playSizeH, 3)
-    plays[2]:addEventListener("touch", playsListener)
-    plays[2].name = "run right";
-
     --Ryan's Layout Start
     local uiBackground = display.newImage( "images/UIBg.jpg" )
 
 
     --NavBar Layout
-
-    local navBarBg = display.newImage("images/NavBarBg.jpg" )
-
-    local navBarBackArrowBtn = display.newImage( "images/TopNavHomeBtn.png" )
-    navBarBackArrowBtn.x, navBarBackArrowBtn.y = 36, 21
-
-    local navBarHeaderText = display.newText("", 0, 20, "Interstate", 20)
-    navBarHeaderText:setTextColor(255, 255, 255)
-    navBarHeaderText:setReferencePoint(display.TopCenterReferencePoint)
-    navBarHeaderText.x = display.viewableContentWidth/2
-    navBarHeaderText.text = "Rock Cats v. Cubs"
-
-    local navBarGroup = display.newGroup()
-
-    navBarGroup:insert( navBarBg )
-    navBarGroup:insert( navBarBackArrowBtn )
-    navBarGroup:insert( navBarHeaderText)
+    navbar = Navbar.new();
 
     --GameScreen Home Team Score Area Layout
-
-    local gsHomeTeamNameText = display.newText("", 0,0, "Interstate", 20)
-    gsHomeTeamNameText.text = string.upper( "Rock Cats" )
-    gsHomeTeamNameText:setReferencePoint( display.TopLeftReferencePoint )
-    gsHomeTeamNameText.x, gsHomeTeamNameText.y = 0, 0
-
-    local gsHomeTeamLogo = display.newImage( "images/TeamLogoBg-RC.png" )
-    gsHomeTeamLogo:setReferencePoint(display.TopLeftReferencePoint)
-    gsHomeTeamLogo.x, gsHomeTeamLogo.y = -1, 25
-
-    local gsHomeTeamUserName = display.newText("", 0,0, "Interstate", 15)
-    gsHomeTeamUserName.text = "UsernameOfPlayerOne"
-    gsHomeTeamUserName:setReferencePoint( display.TopLeftReferencePoint )
-    gsHomeTeamUserName:setTextColor(136, 136, 136)
-    gsHomeTeamUserName.x, gsHomeTeamUserName.y = 0, 138
-
-    local gsHomeTeamScoreText = display.newText("", 0,0, "Interstate", 90)
-    gsHomeTeamScoreText:setReferencePoint( display.TopCenterReferencePoint )
-    gsHomeTeamScoreText.text = 42
-    gsHomeTeamScoreText.x, gsHomeTeamScoreText.y = 178, 60
-
-    --local gsPossessionBall = display.newImage( "images/possessionBall.png" )
-    --gsPossessionBall:setReferencePoint(display.TopLeftReferencePoint)
-    --gsPossessionBall.x, gsPossessionBall.y = 220, 109
-
-    local gsHomeTeamTimeOutBg = display.newImage( "images/TimeOutOuterBg.png" )
-    local gsHomeTeamTimeOutLeft = display.newImage( "images/TimeOutLeft.png" )
-    gsHomeTeamTimeOutLeft.x, gsHomeTeamTimeOutLeft.y = 51, 13
-
-    local gsHomeTeamTimeOutBox = display.newGroup()
-    gsHomeTeamTimeOutBox.x, gsHomeTeamTimeOutBox.y = 112, 104
-
-    gsHomeTeamTimeOutBox:insert ( gsHomeTeamTimeOutBg )
-    gsHomeTeamTimeOutBox:insert ( gsHomeTeamTimeOutLeft )
-
-    local gsHomeTeamScoreInfoBox = display.newGroup()
-    gsHomeTeamScoreInfoBox.x, gsHomeTeamScoreInfoBox.y = 40, 85
-
-    gsHomeTeamScoreInfoBox:insert ( gsHomeTeamNameText )
-    gsHomeTeamScoreInfoBox:insert ( gsHomeTeamLogo )
-    gsHomeTeamScoreInfoBox:insert ( gsHomeTeamScoreText )
-    gsHomeTeamScoreInfoBox:insert ( gsHomeTeamTimeOutBox )
-    gsHomeTeamScoreInfoBox:insert ( gsHomeTeamUserName )
-    --gsHomeTeamScoreInfoBox:insert ( gsPossessionBall )
-
+    homeTeamScoreArea = TeamScoreArea.new();
+    homeTeamScoreArea:setTeamName("Rock cats")
+    homeTeamScoreArea:setLogo("images/TeamLogoBg-RC.png");
+    homeTeamScoreArea:setUsername("Player 1");
+    homeTeamScoreArea:setScore(42)
+    homeTeamScoreArea.x, homeTeamScoreArea.y = 40, 85
 
     --GameScreen Away Team Score Area Layout
-
-    local gsAwayTeamNameText = display.newText("", 0,0, "Interstate", 20)
-    gsAwayTeamNameText.text = string.upper( "Cubs" )
-    gsAwayTeamNameText:setReferencePoint( display.TopLeftReferencePoint )
-    gsAwayTeamNameText.x, gsAwayTeamNameText.y = 0, 0
-
-    local gsAwayTeamLogo = display.newImage( "images/TeamLogoBg-Cubs.png" )
-    gsAwayTeamLogo:setReferencePoint(display.TopLeftReferencePoint)
-    gsAwayTeamLogo.x, gsAwayTeamLogo.y = -1, 25
-
-    local gsAwayTeamUserName = display.newText("", 0,0, "Interstate", 15)
-    gsAwayTeamUserName.text = "UsernameOfPlayerTwo"
-    gsAwayTeamUserName:setReferencePoint( display.TopLeftReferencePoint )
-    gsAwayTeamUserName:setTextColor(136, 136, 136)
-    gsAwayTeamUserName.x, gsAwayTeamUserName.y = 0, 138
-
-    local gsAwayTeamScoreText = display.newText("", 0,0, "Interstate", 90)
-    gsAwayTeamScoreText:setReferencePoint( display.TopCenterReferencePoint )
-    gsAwayTeamScoreText.text = 28
-    gsAwayTeamScoreText.x, gsAwayTeamScoreText.y = 178, 60
-
-    local gsAwayTeamTimeOutBg = display.newImage( "images/TimeOutOuterBg.png" )
-    local gsAwayTeamTimeOutLeft = display.newImage( "images/TimeOutLeft.png" )
-    gsAwayTeamTimeOutLeft.x, gsAwayTeamTimeOutLeft.y = 51, 13
-
-    local gsAwayTeamTimeOutBox = display.newGroup()
-    gsAwayTeamTimeOutBox.x, gsAwayTeamTimeOutBox.y = 112, 104
-
-    gsAwayTeamTimeOutBox:insert ( gsAwayTeamTimeOutBg )
-    gsAwayTeamTimeOutBox:insert ( gsAwayTeamTimeOutLeft )
-
-    local gsAwayTeamScoreInfoBox = display.newGroup()
-    gsAwayTeamScoreInfoBox.x, gsAwayTeamScoreInfoBox.y = 345, 85
-
-    gsAwayTeamScoreInfoBox:insert ( gsAwayTeamNameText )
-    gsAwayTeamScoreInfoBox:insert ( gsAwayTeamLogo )
-    gsAwayTeamScoreInfoBox:insert ( gsAwayTeamScoreText )
-    gsAwayTeamScoreInfoBox:insert ( gsAwayTeamTimeOutBox )
-    gsAwayTeamScoreInfoBox:insert ( gsAwayTeamUserName )
+    awayTeamScoreArea = TeamScoreArea.new();
+    awayTeamScoreArea:setTeamName("Cubs")
+    awayTeamScoreArea:setLogo("images/TeamLogoBg-Cubs.png");
+    awayTeamScoreArea:setUsername("Player 2");
+    awayTeamScoreArea:setScore(28)
+    awayTeamScoreArea.x, awayTeamScoreArea.y = 345, 85
 
     --GameScreen Game Status Area Layout
 
-    local gsQuarterText = display.newText("", 0,0, "Interstate", 20)
-    gsQuarterText:setReferencePoint( display.TopCenterReferencePoint )
-    gsQuarterText.text = string.upper( "3rd qtr" )
-    gsQuarterText.x, gsQuarterText.y = 64, 0
-
-    local gsCurrentGameTimeText = display.newText("", 0,0, "Interstate", 34)
-    gsCurrentGameTimeText:setReferencePoint( display.TopCenterReferencePoint )
-    gsCurrentGameTimeText.text = 12 .. ":" .. 48
-    gsCurrentGameTimeText.x, gsCurrentGameTimeText.y = 64, 26
-
-    local gsCurrentDownTopText = display.newText("", 0,0, "Interstate", 27)
-    gsCurrentDownTopText:setReferencePoint( display.TopCenterReferencePoint )
-    gsCurrentDownTopText.text = string.upper( "1st down" )
-    gsCurrentDownTopText.x, gsCurrentDownTopText.y = 230, 0
-
-    local gsCurrentDownBottomText = display.newText("", 0,0, "Interstate", 27)
-    gsCurrentDownBottomText:setReferencePoint( display.TopCenterReferencePoint )
-    gsCurrentDownBottomText.text = string.upper( "and " ) .. 10
-    gsCurrentDownBottomText.x, gsCurrentDownBottomText.y = 230, 28
-
-    local gsGameStatusBox = display.newGroup()
-    gsGameStatusBox.x, gsGameStatusBox.y = 650, 85
-
-    gsGameStatusBox:insert ( gsQuarterText )
-    gsGameStatusBox:insert ( gsCurrentGameTimeText )
-    gsGameStatusBox:insert ( gsCurrentDownTopText )
-    gsGameStatusBox:insert ( gsCurrentDownBottomText )
+    gameStatusArea = GameStatusArea.new();
+    gameStatusArea:setQuarter("1st Qtr");
+    gameStatusArea:setTime(currentTime);
+    gameStatusArea:setDown(currentDown);
+    gameStatusArea:setYardsToGo(yardsToGo);
+    gameStatusArea.x, gameStatusArea.y = 650, 85;
 
 
     --GameScreen Choose Plays Area Layout
-
-    local gsChoosePlaysMessageBg = display.newImage( "images/ChoosePlayBtn.png" )
-    gsChoosePlaysMessageBg:setReferencePoint(display.TopLeftReferencePoint)
-    gsChoosePlaysMessageBg.x, gsChoosePlaysMessageBg.y = 0, 0
-    local gsChoosePlaysMessageText = display.newText("CHOOSE YOUR PLAYS", 0,0, "Interstate", 26)
-    gsChoosePlaysMessageText:setReferencePoint(display.TopCenterReferencePoint)
-    gsChoosePlaysMessageText.x, gsChoosePlaysMessageText.y = 168, 8
-
-    local gsChoosePlaysMessageBox = display.newGroup()
-
-    gsChoosePlaysMessageBox:insert ( gsChoosePlaysMessageBg )
-    gsChoosePlaysMessageBox:insert ( gsChoosePlaysMessageText )
-
-    --local gsChoosePlaysOuterBg = display.newImage( "images/ChoosePlayOuterBg.png" )
-    --gsChoosePlaysOuterBg:setReferencePoint(display.TopLeftReferencePoint)
-    --gsChoosePlaysOuterBg.x, gsChoosePlaysOuterBg.y = 0, 59
-
-
-    --First Drag Box - this should be a loop
-
-    local gsChoosePlaysDownSlotOneBg = display.newImage( "images/PickPlayBtnEnter.png" )
-    local gsChoosePlaysDownSlotOneTextDrag = display.newText("DRAG A PLAY", 0,0, "Interstate", 9)
-    gsChoosePlaysDownSlotOneTextDrag:setTextColor(40, 40, 40)
-    gsChoosePlaysDownSlotOneTextDrag.x, gsChoosePlaysDownSlotOneTextDrag.y = 42, 64
-
-    local gsChoosePlaysDownSlotOneTextDown = display.newText("DOWN", 0,0, "Interstate", 16)
-    gsChoosePlaysDownSlotOneTextDown:setTextColor(40, 40, 40)
-    gsChoosePlaysDownSlotOneTextDown.x, gsChoosePlaysDownSlotOneTextDown.y = 40, 48
-
-    local gsChoosePlaysDownSlotOneTextDownNum = display.newText("", 0,0, "Interstate", 30)
-    gsChoosePlaysDownSlotOneTextDownNum.text = string.upper( "1st" )
-    gsChoosePlaysDownSlotOneTextDownNum:setReferencePoint(display.TopCenterReferencePoint)
-    gsChoosePlaysDownSlotOneTextDownNum:setTextColor(40, 40, 40)
-    gsChoosePlaysDownSlotOneTextDownNum.x, gsChoosePlaysDownSlotOneTextDownNum.y = 41, 6
-
-    local gsChoosePlaysDownSlotOneBox = display.newGroup()
-    gsChoosePlaysDownSlotOneBox.x, gsChoosePlaysDownSlotOneBox.y = 13, 73
-
-    gsChoosePlaysDownSlotOneBox:insert ( gsChoosePlaysDownSlotOneBg )
-    gsChoosePlaysDownSlotOneBox:insert ( gsChoosePlaysDownSlotOneTextDrag )
-    gsChoosePlaysDownSlotOneBox:insert ( gsChoosePlaysDownSlotOneTextDown )
-    gsChoosePlaysDownSlotOneBox:insert ( gsChoosePlaysDownSlotOneTextDownNum )
-
-    playContainers[0] = gsChoosePlaysDownSlotOneBox
-    --Second Drag Box
-
-    local gsChoosePlaysDownSlotTwoBg = display.newImage( "images/PickPlayBtnEnter.png" )
-    playContainers[1] = gsChoosePlaysDownSlotTwoBg;
-    local gsChoosePlaysDownSlotTwoTextDrag = display.newText("DRAG A PLAY", 0,0, "Interstate", 9)
-    gsChoosePlaysDownSlotTwoTextDrag:setTextColor(40, 40, 40)
-    gsChoosePlaysDownSlotTwoTextDrag.x, gsChoosePlaysDownSlotTwoTextDrag.y = 42, 64
-
-    local gsChoosePlaysDownSlotTwoTextDown = display.newText("DOWN", 0,0, "Interstate", 16)
-    gsChoosePlaysDownSlotTwoTextDown:setTextColor(40, 40, 40)
-    gsChoosePlaysDownSlotTwoTextDown.x, gsChoosePlaysDownSlotTwoTextDown.y = 40, 48
-
-    local gsChoosePlaysDownSlotTwoTextDownNum = display.newText("", 0,0, "Interstate", 30)
-    gsChoosePlaysDownSlotTwoTextDownNum.text = string.upper( "2nd" )
-    gsChoosePlaysDownSlotTwoTextDownNum:setReferencePoint(display.TopCenterReferencePoint)
-    gsChoosePlaysDownSlotTwoTextDownNum:setTextColor(40, 40, 40)
-    gsChoosePlaysDownSlotTwoTextDownNum.x, gsChoosePlaysDownSlotTwoTextDownNum.y = 41, 6
-
-    local gsChoosePlaysDownSlotTwoBox = display.newGroup()
-    gsChoosePlaysDownSlotTwoBox.x, gsChoosePlaysDownSlotTwoBox.y = 102, 73
-
-    gsChoosePlaysDownSlotTwoBox:insert ( gsChoosePlaysDownSlotTwoBg )
-    gsChoosePlaysDownSlotTwoBox:insert ( gsChoosePlaysDownSlotTwoTextDrag )
-    gsChoosePlaysDownSlotTwoBox:insert ( gsChoosePlaysDownSlotTwoTextDown )
-    gsChoosePlaysDownSlotTwoBox:insert ( gsChoosePlaysDownSlotTwoTextDownNum )
-
-    playContainers[1] = gsChoosePlaysDownSlotTwoBox
-    --Third Drag Box
-
-    local gsChoosePlaysDownSlotThreeBg = display.newImage( "images/PickPlayBtnEnter.png" )
-    playContainers[2] = gsChoosePlaysDownSlotThreeBg;
-    local gsChoosePlaysDownSlotThreeTextDrag = display.newText("DRAG A PLAY", 0,0, "Interstate", 9)
-    gsChoosePlaysDownSlotThreeTextDrag:setTextColor(40, 40, 40)
-    gsChoosePlaysDownSlotThreeTextDrag.x, gsChoosePlaysDownSlotThreeTextDrag.y = 42, 64
-
-    local gsChoosePlaysDownSlotThreeTextDown = display.newText("DOWN", 0,0, "Interstate", 16)
-    gsChoosePlaysDownSlotThreeTextDown:setTextColor(40, 40, 40)
-    gsChoosePlaysDownSlotThreeTextDown.x, gsChoosePlaysDownSlotThreeTextDown.y = 40, 48
-
-    local gsChoosePlaysDownSlotThreeTextDownNum = display.newText("", 0,0, "Interstate", 30)
-    gsChoosePlaysDownSlotThreeTextDownNum.text = string.upper( "3rd" )
-    gsChoosePlaysDownSlotThreeTextDownNum:setReferencePoint(display.TopCenterReferencePoint)
-    gsChoosePlaysDownSlotThreeTextDownNum:setTextColor(40, 40, 40)
-    gsChoosePlaysDownSlotThreeTextDownNum.x, gsChoosePlaysDownSlotThreeTextDownNum.y = 41, 6
-
-    local gsChoosePlaysDownSlotThreeBox = display.newGroup()
-    gsChoosePlaysDownSlotThreeBox.x, gsChoosePlaysDownSlotThreeBox.y = 191, 73
-
-    gsChoosePlaysDownSlotThreeBox:insert ( gsChoosePlaysDownSlotThreeBg )
-    gsChoosePlaysDownSlotThreeBox:insert ( gsChoosePlaysDownSlotThreeTextDrag )
-    gsChoosePlaysDownSlotThreeBox:insert ( gsChoosePlaysDownSlotThreeTextDown )
-    gsChoosePlaysDownSlotThreeBox:insert ( gsChoosePlaysDownSlotThreeTextDownNum )
-
-    playContainers[2] = gsChoosePlaysDownSlotThreeBox
-    --Play Buttons
-
-    local gsPassDeepLeftBg = display.newImage( "images/PickPlayBtn.png" )
-    local gsPassDeepLeftTextTop = display.newText("PASS", 18,14, "Interstate", 15)
-    local gsPassDeepLeftTextMiddle = display.newText("DEEP", 18,30, "Interstate", 15)
-    local gsPassDeepLeftTextBottom = display.newText("LEFT", 18,46, "Interstate", 15)
-    local gsPassDeepLeftText = display.newGroup()
-
-    gsPassDeepLeftText:insert ( gsPassDeepLeftTextTop )
-    gsPassDeepLeftText:insert ( gsPassDeepLeftTextMiddle )
-    gsPassDeepLeftText:insert ( gsPassDeepLeftTextBottom )
-
-    local gsPassDeepLeftBtn = display.newGroup()
-    gsPassDeepLeftBtn.x, gsPassDeepLeftBtn.y = 14, 177
-
-    gsPassDeepLeftBtn:insert ( gsPassDeepLeftBg )
-    gsPassDeepLeftBtn:insert ( gsPassDeepLeftText )
-
-    plays[0] = gsPassDeepLeftBtn;
-    plays[0]:addEventListener("touch", playsListener)
-    plays[0].name = "Deep Pass Left";
-
-    local gsPassDeepMiddleBg = display.newImage( "images/PickPlayBtn.png" )
-    local gsPassDeepMiddleTextTop = display.newText("PASS", 18,14, "Interstate", 15)
-    local gsPassDeepMiddleTextMiddle = display.newText("DEEP", 18,30, "Interstate", 15)
-    local gsPassDeepMiddleTextBottom = display.newText("MIDDLE", 9,46, "Interstate", 15)
-    local gsPassDeepMiddleText = display.newGroup()
-
-    gsPassDeepMiddleText:insert ( gsPassDeepMiddleTextTop )
-    gsPassDeepMiddleText:insert ( gsPassDeepMiddleTextMiddle )
-    gsPassDeepMiddleText:insert ( gsPassDeepMiddleTextBottom )
-
-    local gsPassDeepMiddleBtn = display.newGroup()
-    gsPassDeepMiddleBtn.x, gsPassDeepMiddleBtn.y = 103, 177
-
-    gsPassDeepMiddleBtn:insert ( gsPassDeepMiddleBg )
-    gsPassDeepMiddleBtn:insert ( gsPassDeepMiddleText )
-
-    plays[1] = gsPassDeepMiddleBtn;
-    plays[1]:addEventListener("touch", playsListener)
-    plays[1].name = "Deep Pass Middle";
-
-    local gsPassDeepRightBg = display.newImage( "images/PickPlayBtn.png" )
-    local gsPassDeepRightTextTop = display.newText("PASS", 18,14, "Interstate", 15)
-    local gsPassDeepRightTextMiddle = display.newText("DEEP", 18,30, "Interstate", 15)
-    local gsPassDeepRightTextBottom = display.newText("RIGHT", 14,46, "Interstate", 15)
-    local gsPassDeepRightText = display.newGroup()
-
-    gsPassDeepRightText:insert ( gsPassDeepRightTextTop )
-    gsPassDeepRightText:insert ( gsPassDeepRightTextMiddle )
-    gsPassDeepRightText:insert ( gsPassDeepRightTextBottom )
-
-    local gsPassDeepRightBtn = display.newGroup()
-    gsPassDeepRightBtn.x, gsPassDeepRightBtn.y = 192, 177
-
-    gsPassDeepRightBtn:insert ( gsPassDeepRightBg )
-    gsPassDeepRightBtn:insert ( gsPassDeepRightText )
-
-    plays[2] = gsPassDeepRightBtn;
-    plays[2]:addEventListener("touch", playsListener)
-    plays[2].name = "Deep Pass Right";
-
-    local gsPassShortLeftBg = display.newImage( "images/PickPlayBtn.png" )
-    local gsPassShortLeftTextTop = display.newText("PASS", 18,14, "Interstate", 15)
-    local gsPassShortLeftTextMiddle = display.newText("SHORT", 12,30, "Interstate", 15)
-    local gsPassShortLeftTextBottom = display.newText("LEFT", 18,46, "Interstate", 15)
-    local gsPassShortLeftText = display.newGroup()
-
-    gsPassShortLeftText:insert ( gsPassShortLeftTextTop )
-    gsPassShortLeftText:insert ( gsPassShortLeftTextMiddle )
-    gsPassShortLeftText:insert ( gsPassShortLeftTextBottom )
-
-    local gsPassShortLeftBtn = display.newGroup()
-    gsPassShortLeftBtn.x, gsPassShortLeftBtn.y = 14, 267
-
-    gsPassShortLeftBtn:insert ( gsPassShortLeftBg )
-    gsPassShortLeftBtn:insert ( gsPassShortLeftText )
-
-    plays[3] = gsPassShortLeftBtn;
-    plays[3]:addEventListener("touch", playsListener)
-    plays[3].name = "Short Pass Left";
-
-    local gsPassShortMiddleBg = display.newImage( "images/PickPlayBtn.png" )
-    local gsPassShortMiddleTextTop = display.newText("PASS", 18,14, "Interstate", 15)
-    local gsPassShortMiddleTextMiddle = display.newText("SHORT", 12,30, "Interstate", 15)
-    local gsPassShortMiddleTextBottom = display.newText("MIDDLE", 9,46, "Interstate", 15)
-    local gsPassShortMiddleText = display.newGroup()
-
-    gsPassShortMiddleText:insert ( gsPassShortMiddleTextTop )
-    gsPassShortMiddleText:insert ( gsPassShortMiddleTextMiddle )
-    gsPassShortMiddleText:insert ( gsPassShortMiddleTextBottom )
-
-    local gsPassShortMiddleBtn = display.newGroup()
-    gsPassShortMiddleBtn.x, gsPassShortMiddleBtn.y = 103, 267
-
-    gsPassShortMiddleBtn:insert ( gsPassShortMiddleBg )
-    gsPassShortMiddleBtn:insert ( gsPassShortMiddleText )
-
-    plays[4] = gsPassShortMiddleBtn;
-    plays[4]:addEventListener("touch", playsListener)
-    plays[4].name = "Short Pass Middle";
-
-    local gsPassShortRightBg = display.newImage( "images/PickPlayBtn.png" )
-    local gsPassShortRightTextTop = display.newText("PASS", 18,14, "Interstate", 15)
-    local gsPassShortRightTextMiddle = display.newText("SHORT", 12,30, "Interstate", 15)
-    local gsPassShortRightTextBottom = display.newText("RIGHT", 14,46, "Interstate", 15)
-    local gsPassShortRightText = display.newGroup()
-
-    gsPassShortRightText:insert ( gsPassShortRightTextTop )
-    gsPassShortRightText:insert ( gsPassShortRightTextMiddle )
-    gsPassShortRightText:insert ( gsPassShortRightTextBottom )
-
-    local gsPassShortRightBtn = display.newGroup()
-    gsPassShortRightBtn.x, gsPassShortRightBtn.y = 192, 267
-
-    gsPassShortRightBtn:insert ( gsPassShortRightBg )
-    gsPassShortRightBtn:insert ( gsPassShortRightText )
-
-    plays[5] = gsPassShortRightBtn;
-    plays[5]:addEventListener("touch", playsListener)
-    plays[5].name = "Short Pass Right";
-
-    local gsRunLeftBg = display.newImage( "images/PickPlayBtn.png" )
-    local gsRunLeftTextTop = display.newText("RUN", 21,21, "Interstate", 15)
-    local gsRunLeftTextBottom = display.newText("LEFT", 18,39, "Interstate", 15)
-    local gsRunLeftText = display.newGroup()
-
-    gsRunLeftText:insert ( gsRunLeftTextTop )
-    gsRunLeftText:insert ( gsRunLeftTextBottom )
-
-    local gsRunLeftBtn = display.newGroup()
-    gsRunLeftBtn.x, gsRunLeftBtn.y = 14, 357
-
-    gsRunLeftBtn:insert ( gsRunLeftBg )
-    gsRunLeftBtn:insert ( gsRunLeftText )
-
-    plays[6] = gsRunLeftBtn;
-    plays[6]:addEventListener("touch", playsListener)
-    plays[6].name = "Run Left";
-
-    local gsRunMiddleBg = display.newImage( "images/PickPlayBtn.png" )
-    local gsRunMiddleTextTop = display.newText("RUN", 21,21, "Interstate", 15)
-    local gsRunMiddleTextBottom = display.newText("MIDDLE", 9,39, "Interstate", 15)
-    local gsRunMiddleText = display.newGroup()
-
-    gsRunMiddleText:insert ( gsRunMiddleTextTop )
-    gsRunMiddleText:insert ( gsRunMiddleTextBottom )
-
-    local gsRunMiddleBtn = display.newGroup()
-    gsRunMiddleBtn.x, gsRunMiddleBtn.y = 103, 357
-
-    gsRunMiddleBtn:insert ( gsRunMiddleBg )
-    gsRunMiddleBtn:insert ( gsRunMiddleText )
-
-    plays[7] = gsRunMiddleBtn;
-    plays[7]:addEventListener("touch", playsListener)
-    plays[7].name = "Run Middle";
-
-    local gsRunRightBg = display.newImage( "images/PickPlayBtn.png" )
-    local gsRunRightTextTop = display.newText("RUN", 21,21, "Interstate", 15)
-    local gsRunRightTextBottom = display.newText("RIGHT", 14,39, "Interstate", 15)
-    local gsRunRightText = display.newGroup()
-
-    gsRunRightText:insert ( gsRunRightTextTop )
-    gsRunRightText:insert ( gsRunRightTextBottom )
-
-    local gsRunRightBtn = display.newGroup()
-    gsRunRightBtn.x, gsRunRightBtn.y = 192, 357
-
-    gsRunRightBtn:insert ( gsRunRightBg )
-    gsRunRightBtn:insert ( gsRunRightText )
-
-    plays[8] = gsRunRightBtn;
-    plays[8]:addEventListener("touch", playsListener)
-    plays[8].name = "Run Right";
-
-    local gsPowerMeterBg = display.newImage ( "images/PowerMeter.png" )
-    gsPowerMeterBg:setReferencePoint( display.TopLeftReferencePoint )
-    gsPowerMeterBg.x, gsPowerMeterBg.y = 283, 177
-
-    local gsChoosePlaysFullGroup = display.newGroup()
-    gsChoosePlaysFullGroup.x, gsChoosePlaysFullGroup.y = 648, 136
-
-    gsChoosePlaysFullGroup:insert ( gsChoosePlaysMessageBox )
-    --gsChoosePlaysFullGroup:insert ( gsChoosePlaysOuterBg )
-    gsChoosePlaysFullGroup:insert ( gsChoosePlaysDownSlotOneBox )
-    gsChoosePlaysFullGroup:insert ( gsChoosePlaysDownSlotTwoBox )
-    gsChoosePlaysFullGroup:insert ( gsChoosePlaysDownSlotThreeBox )
-    gsChoosePlaysFullGroup:insert ( gsPassDeepLeftBtn )
-    gsChoosePlaysFullGroup:insert ( gsPassDeepMiddleBtn )
-    gsChoosePlaysFullGroup:insert ( gsPassDeepRightBtn )
-    gsChoosePlaysFullGroup:insert ( gsPassShortLeftBtn )
-    gsChoosePlaysFullGroup:insert ( gsPassShortMiddleBtn )
-    gsChoosePlaysFullGroup:insert ( gsPassShortRightBtn )
-    gsChoosePlaysFullGroup:insert ( gsRunLeftBtn )
-    gsChoosePlaysFullGroup:insert ( gsRunMiddleBtn )
-    gsChoosePlaysFullGroup:insert ( gsRunRightBtn )
-    gsChoosePlaysFullGroup:insert ( gsPowerMeterBg )
+    choosePlaysArea = ChoosePlaysArea.new();
+    choosePlaysArea.x, choosePlaysArea.y = 648, 136
 
     --GameScreen Bottom Blue Buttons
 
@@ -609,49 +206,8 @@ function scene:createScene( event )
     gsStatsBtn:insert ( gsStatsText )
 
     --GameScreen Field Area
-
-    local gsFieldBg = display.newImage( "images/FieldOuter.jpg" )
-
-    local gsHomeEndZoneBg = display.newImage( "images/EndzoneRed.jpg" )
-    local gsHomeEndZoneText = display.newText("", 0,0, "Interstate", 36)
-    gsHomeEndZoneText.text = string.upper( "Rock Cats" )
-    gsHomeEndZoneText:setReferencePoint(display.CenterReferencePoint)
-    gsHomeEndZoneText.x, gsHomeEndZoneText.y = 27, 150
-    gsHomeEndZoneText:rotate(-90)
-    local gsHomeEndZone = display.newGroup()
-    gsHomeEndZone.x, gsHomeEndZone.y = 5, 5
-
-    gsHomeEndZone:insert ( gsHomeEndZoneBg )
-    gsHomeEndZone:insert ( gsHomeEndZoneText )
-
-    local gsAwayEndZoneBg = display.newImage( "images/EndzoneBlue.jpg" )
-    local gsAwayEndZoneText = display.newText("", 0,0, "Interstate", 36)
-    gsAwayEndZoneText.text = string.upper( "Cubs" )
-    gsAwayEndZoneText:setReferencePoint(display.CenterReferencePoint)
-    gsAwayEndZoneText.x, gsAwayEndZoneText.y = 27, 150
-    gsAwayEndZoneText:rotate(90)
-    local gsAwayEndZone = display.newGroup()
-    gsAwayEndZone.x, gsAwayEndZone.y = 510, 5
-
-    gsAwayEndZone:insert ( gsAwayEndZoneBg )
-    gsAwayEndZone:insert ( gsAwayEndZoneText )
-
-    --local gsLineOfScrimmage = display.newImage( "images/fieldLineOfScrimmage.png" )
-    --gsLineOfScrimmage:setReferencePoint(display.TopLeftReferencePoint)
-    --gsLineOfScrimmage.x, gsLineOfScrimmage.y = 349, 5
-
-    --local gsFirstDownLine = display.newImage( "images/fieldFirstDownLine.png" )
-    --gsFirstDownLine:setReferencePoint(display.TopLeftReferencePoint)
-    --gsFirstDownLine.x, gsFirstDownLine.y = 304, 5
-
-    local gsFieldGroup = display.newGroup()
-    gsFieldGroup.x, gsFieldGroup.y = 40, 274
-
-    gsFieldGroup:insert ( gsFieldBg )
-    gsFieldGroup:insert ( gsHomeEndZone )
-    gsFieldGroup:insert ( gsAwayEndZone )
-    --gsFieldGroup:insert ( gsLineOfScrimmage )
-    --gsFieldGroup:insert ( gsFirstDownLine )
+    field = Field.new();
+    field.x, field.y = 40, 274;
 
 end
 
