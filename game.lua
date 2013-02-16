@@ -45,12 +45,86 @@ local possession = 0; -- 0 = Home, 1 = Away
 
 
 --[FUNCTIONS]
+function changePossession()
+    if possession == 0 then
+        possession = 1;
+    else
+        possession = 0;
+    end
+    yardsToGo = 10;
+    currentDown = 1;
+    currentYardLine = 100 - currentYardLine;
+
+    print("Other team is now on offense");
+end
+
+function kickoff()
+    currentYardLine = 65;
+    local maxKick = 80;
+    local minKick = 50;
+    math.randomseed(os.time());
+    local yards = math.floor((maxKick - (maxKick - minKick)) * math.random()) + minKick;
+    currentYardLine = currentYardLine - yards;
+
+    --TO DO: program the return
+
+    if (currentYardLine < 1) then
+        currentYardLine = 20;
+    end
+    --update time
+    currentTime = currentTime - 20;
+    print("Kickoff: " .. yards .. " yards");
+    changePossession();
+end
+
+function punt()
+    local maxPunt = 50;
+    local minPunt = 30;
+    math.randomseed(os.time());
+    local yards = math.floor((maxPunt - (maxPunt - minPunt)) * math.random()) + minPunt;
+    currentYardLine = currentYardLine - yards;
+
+    if (currentYardLine < 1) then
+        currentYardLine = 20;
+    end
+    changePossession();
+    --update time
+    currentTime = currentTime - 60;
+    print("PUNT: " .. yards .. " yards");
+end
+
+function fieldGoal()
+    local fieldGoalLength = currentYardLine + 17;
+    local kickProbability = .95;
+    if (fieldGoalLength > 30 and fieldGoalLength < 40) then
+        kickProbability = .85;
+    elseif (fieldGoalLength >= 40 and fieldGoalLength < 50) then
+        kickProbability = .6
+    elseif (fieldGoalLength >=50) then
+        kickProbability = .3;
+    end
+    math.randomseed(os.time());
+    local madeKick = (kickProbability + math.random()) > 1;
+
+    if (madeKick) then
+        print("Field goal is good from " .. fieldGoalLength .. " yards out!")
+        if (possession == 0) then
+            homeScore = homeScore + 3;
+        else
+            awayScore = awayScore + 3;
+        end
+    else
+        print("Missed field goal from " .. fieldGoalLength .. " yards out");
+    end
+
+    return madeKick;
+end
+
 function runPlays(e)
     local self = e.target --the button
-    --gsChoosePlaysMessageText:removeSelf();
-    local playsChosen = "";
     local gameOver = false;
     local totalYardsGained = 0;
+    print("CURRENT YARD LINE: " .. currentYardLine);
     for i = 0, #selectedPlays do
         if (selectedPlays[i] ~= nil and yardsToGo > 0) then
             math.randomseed(os.time());
@@ -67,6 +141,18 @@ function runPlays(e)
             end
             currentDown = currentDown + 1;
 
+            --check time
+            currentTime = currentTime - 30;
+            if currentTime <= 0 then
+                currentQuarter = currentQuarter + 1;
+                if (currentQuarter == 5) then
+                    gameOver = true;
+                    break;
+                else
+                    currentTime = 900;
+                end
+            end
+
             --Check for first down
             if yardsToGo < 1 then
                break;
@@ -82,42 +168,33 @@ function runPlays(e)
                 end
                 break;
             end
-
-            --check time
-            currentTime = currentTime - 30;
-            if currentTime == 0 then
-                currentQuarter = currentQuarter + 1;
-                if (currentQuarter == 5) then
-                    gameOver = true;
-                    break;
-                else
-                    currentTime = 900;
-                end
-            end
         end
     end
-    --Check for game over
-    if gameOver then
+
+    --[CHECKS]
+    if gameOver then --Game over
         print("Game Over");
-    --Check if First Down
-    elseif (yardsToGo < 1) then
+        storyboard.gotoScene( "menu", "fade", 1000 )
+    elseif currentYardLine < 1 then--Touchdown
+        kickoff();
+    elseif (yardsToGo < 1) then--First Down
         print("First Down! Pick 3 more plays");
+        currentDown = 1;
+        yardsToGo = 10;
     else
-        if possession == 0 then
-            possession = 1;
+        if (currentYardLine + 17 < 60) then
+            local madeFieldGoal = fieldGoal();
+            if (madeFieldGoal) then
+               kickoff();
+            else
+                changePossession();
+            end
         else
-            possession = 0;
+            punt();
         end
-        currentYardLine = 80;
-        print("Other team is now on offense");
     end
 
-
-    --Reset
-    yardsToGo = 10;
-    currentDown = 1;
-
-    --update game screen
+    --[UPDATE] game screen
     gameStatusArea:setTime(currentTime);
     gameStatusArea:setQuarter(currentQuarter);
     gameStatusArea:setDown(currentDown);
@@ -182,7 +259,7 @@ function scene:createScene( event )
     --GameScreen Bottom Blue Buttons
 
     local gsCallTOBg = display.newImage( "images/CallTimeOutBtn.png" )
-    local gsCallTOText = display.newText("CALL TIMEOUT", 66,13, "Interstate", 26)
+    local gsCallTOText = display.newRetinaText("CALL TIMEOUT", 66,13, "Interstate", 26)
     local gsCallTOBtn = display.newGroup()
     gsCallTOBtn.x, gsCallTOBtn.y = 649, 603
 
@@ -190,7 +267,7 @@ function scene:createScene( event )
     gsCallTOBtn:insert ( gsCallTOText )
 
     --local gsDrivesBg = display.newImage( "images/DrivesBtn.png" )
-    local gsDrivesText = display.newText("DRIVES", 33,13, "Interstate", 26)
+    local gsDrivesText = display.newRetinaText("DRIVES", 33,13, "Interstate", 26)
     local gsDrivesBtn = display.newGroup()
     gsDrivesBtn.x, gsDrivesBtn.y = 649, 671
 
@@ -198,7 +275,7 @@ function scene:createScene( event )
     gsDrivesBtn:insert ( gsDrivesText )
 
     --local gsStatsBg = display.newImage( "images/DrivesBtn.png" )
-    local gsStatsText = display.newText("STATS", 38,13, "Interstate", 26)
+    local gsStatsText = display.newRetinaText("STATS", 38,13, "Interstate", 26)
     local gsStatsBtn = display.newGroup()
     gsStatsBtn.x, gsStatsBtn.y = 822, 671
 
@@ -208,6 +285,10 @@ function scene:createScene( event )
     --GameScreen Field Area
     field = Field.new();
     field.x, field.y = 40, 274;
+
+    --Start game
+    possession = 0;
+    kickoff();
 
 end
 

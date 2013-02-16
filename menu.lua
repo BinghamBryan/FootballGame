@@ -19,7 +19,7 @@ local layoutBtn
 -- 'onRelease' event listener for playBtn
 local function onPlayBtnRelease()
 	-- go to game.lua scene
-	storyboard.gotoScene( "game", "fade", 500 )
+	storyboard.gotoScene( "game", "fade", 1000 )
 	
 	return true	-- indicates successful touch
 end
@@ -44,22 +44,21 @@ function scene:createScene( event )
 	local group = self.view
 
 	-- display a background image
-	local background = display.newImageRect( "background.jpg", display.contentWidth, display.contentHeight )
+	local background = display.newImageRect( "images/UIBg.jpg", display.contentWidth, display.contentHeight )
 	background:setReferencePoint( display.TopLeftReferencePoint )
 	background.x, background.y = 0, 0
 	
 	-- create/position logo/title image on upper-half of the screen
-	local titleLogo = display.newImageRect( "logo.png", 264, 42 )
+	local titleLogo = display.newRetinaText( "Football Game", 264, 42, "Interstate", 34)
 	titleLogo:setReferencePoint( display.CenterReferencePoint )
 	titleLogo.x = display.contentWidth * 0.5
 	titleLogo.y = 100
 	
-	-- create a widget button (which will loads level1.lua on release)
+	-- create a widget button (which will loads game.lua on release)
 	playBtn = widget.newButton{
 		label="Play Now",
 		labelColor = { default={255}, over={128} },
-		default="button.png",
-		over="button-over.png",
+		default="images/ChoosePlayBtn.png",
 		width=154, height=40,
 		onRelease = onPlayBtnRelease	-- event listener function
 	}
@@ -67,12 +66,11 @@ function scene:createScene( event )
 	playBtn.x = display.contentWidth*0.5
 	playBtn.y = display.contentHeight - 125
 
-    -- create a widget button (which will loads level1.lua on release)
+    -- create a widget button (which will loads game.lua on release)
     layoutBtn = widget.newButton{
         label="Layout View",
         labelColor = { default={255}, over={128} },
-        default="button.png",
-        over="button-over.png",
+        default="images/ChoosePlayBtn.png",
         width=154, height=40,
         onRelease = onLayoutBtnRelease	-- event listener function
     }
