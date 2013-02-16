@@ -19,7 +19,7 @@ local physics = require "physics"
 physics.start(); physics.pause()
 --------------------------------------------
 --[GLOBALS]
-selectedPlays = {};
+playContainers = {};
 
 --[VARIABLES]
 -- forward declarations and other locals
@@ -125,11 +125,12 @@ function runPlays(e)
     local gameOver = false;
     local totalYardsGained = 0;
     print("CURRENT YARD LINE: " .. currentYardLine);
-    for i = 0, #selectedPlays do
-        if (selectedPlays[i] ~= nil and yardsToGo > 0) then
+    for i = 0, #playContainers do
+        if (playContainers[i] ~= nil and yardsToGo > 0) then
             math.randomseed(os.time());
-            local yards = math.floor(selectedPlays[i].maxYards * math.random());
-            local isPositive = (selectedPlays[i].probability + math.random()) > 1;
+            local play = playContainers[i].play;
+            local yards = math.floor(play.maxYards * math.random());
+            local isPositive = (play.probability + math.random()) > 1;
 
             if (isPositive) then
                 totalYardsGained = totalYardsGained + yards;
@@ -231,7 +232,7 @@ function scene:createScene( event )
     homeTeamScoreArea:setTeamName("Rock cats")
     homeTeamScoreArea:setLogo("images/TeamLogoBg-RC.png");
     homeTeamScoreArea:setUsername("Player 1");
-    homeTeamScoreArea:setScore(42)
+    homeTeamScoreArea:setScore(homeScore)
     homeTeamScoreArea.x, homeTeamScoreArea.y = 40, 85
 
     --GameScreen Away Team Score Area Layout
@@ -239,13 +240,13 @@ function scene:createScene( event )
     awayTeamScoreArea:setTeamName("Cubs")
     awayTeamScoreArea:setLogo("images/TeamLogoBg-Cubs.png");
     awayTeamScoreArea:setUsername("Player 2");
-    awayTeamScoreArea:setScore(28)
+    awayTeamScoreArea:setScore(awayScore)
     awayTeamScoreArea.x, awayTeamScoreArea.y = 345, 85
 
     --GameScreen Game Status Area Layout
 
     gameStatusArea = GameStatusArea.new();
-    gameStatusArea:setQuarter("1st Qtr");
+    gameStatusArea:setQuarter(currentQuarter);
     gameStatusArea:setTime(currentTime);
     gameStatusArea:setDown(currentDown);
     gameStatusArea:setYardsToGo(yardsToGo);

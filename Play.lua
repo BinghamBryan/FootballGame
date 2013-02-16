@@ -7,7 +7,6 @@
 --
 
 P = {};
-
 function P.new()
 
     local playBg = display.newImage( "images/PickPlayBtn.png" )
