@@ -35,13 +35,13 @@ function F.new()
     gsAwayEndZone:insert ( gsAwayEndZoneBg )
     gsAwayEndZone:insert ( gsAwayEndZoneText )
 
-    --local gsLineOfScrimmage = display.newImage( "images/fieldLineOfScrimmage.png" )
-    --gsLineOfScrimmage:setReferencePoint(display.TopLeftReferencePoint)
-    --gsLineOfScrimmage.x, gsLineOfScrimmage.y = 349, 5
+    local gsLineOfScrimmage = display.newImage( "images/fieldLineOfScrimmage.png" )
+    gsLineOfScrimmage:setReferencePoint(display.TopLeftReferencePoint)
+    gsLineOfScrimmage.x, gsLineOfScrimmage.y = 349, 5
 
-    --local gsFirstDownLine = display.newImage( "images/fieldFirstDownLine.png" )
-    --gsFirstDownLine:setReferencePoint(display.TopLeftReferencePoint)
-    --gsFirstDownLine.x, gsFirstDownLine.y = 304, 5
+    local gsFirstDownLine = display.newImage( "images/fieldFirstDownLine.png" )
+    gsFirstDownLine:setReferencePoint(display.TopLeftReferencePoint)
+    gsFirstDownLine.x, gsFirstDownLine.y = 304, 5
 
     local gsFieldGroup = display.newGroup()
     gsFieldGroup.x, gsFieldGroup.y = 40, 274
@@ -49,8 +49,30 @@ function F.new()
     gsFieldGroup:insert ( gsFieldBg )
     gsFieldGroup:insert ( gsHomeEndZone )
     gsFieldGroup:insert ( gsAwayEndZone )
-    --gsFieldGroup:insert ( gsLineOfScrimmage )
-    --gsFieldGroup:insert ( gsFirstDownLine )
+    gsFieldGroup:insert ( gsLineOfScrimmage )
+    gsFieldGroup:insert ( gsFirstDownLine )
+
+    function gsFieldGroup:updateLineOfScrimmage(yardLine, possession)
+        gsLineOfScrimmage.x = getXForYardLine(yardLine, possession);
+    end
+
+    function gsFieldGroup:updateFirstDownLine(yardLine,possession)
+        gsFirstDownLine.x = getXForYardLine(yardLine, possession);
+    end
+
+    function getXForYardLine(yardLine, possession)
+        local x = 0;
+        local offset = 0;
+        local fieldWidth = 450;
+        local pixelsPerYard = fieldWidth / 100;
+        local endZoneWidth = 60;
+        if (possession == 0) then -- Home
+            x = yardLine * pixelsPerYard + endZoneWidth;
+        else --Away
+            x = fieldWidth - (yardLine * pixelsPerYard) + endZoneWidth;
+        end
+        return x - offset;
+    end
 
     return gsFieldGroup;
 

@@ -96,7 +96,9 @@ function CPA.new()
         labelColor = { default={255}, over={128} },
         default="images/ChoosePlayBtn.png",
         width=340, height=48,
-        onRelease = onPlayBtnRelease	-- event listener function
+        onRelease = onPlayBtnRelease,	-- event listener function
+        font = "Interstate",
+        fontSize = 26
     }
 
     gsChoosePlaysFullGroup:insert(runPlaysButton);

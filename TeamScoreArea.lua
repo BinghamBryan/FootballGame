@@ -10,22 +10,22 @@ TSA = {};
 
 function TSA.new()
 
-    local gsTeamNameText = display.newText("", 0,0, "Interstate", 20)
-    gsTeamNameText:setReferencePoint( display.TopLeftReferencePoint )
+    local gsTeamNameText = display.newRetinaText("", 0,0, "Interstate", 20)
+    gsTeamNameText:setReferencePoint( display.TopCenterReferencePoint );
     gsTeamNameText.x, gsTeamNameText.y = 0, 0
 
-    local gsTeamUserName = display.newText("", 0,0, "Interstate", 15)
-    gsTeamUserName:setReferencePoint( display.TopLeftReferencePoint )
+    local gsTeamUserName = display.newRetinaText("", 0,0, "Interstate", 15)
+    gsTeamUserName:setReferencePoint( display.TopCenterReferencePoint );
     gsTeamUserName:setTextColor(136, 136, 136)
     gsTeamUserName.x, gsTeamUserName.y = 0, 138
 
-    local gsTeamScoreText = display.newText("", 0,0, "Interstate", 90)
-    gsTeamScoreText:setReferencePoint( display.TopCenterReferencePoint )
+    local gsTeamScoreText = display.newRetinaText("", 0,0, "Interstate", 90)
+    gsTeamScoreText:setReferencePoint( display.TopCenterReferencePoint );
     gsTeamScoreText.x, gsTeamScoreText.y = 178, 60
 
-    --local gsPossessionBall = display.newImage( "images/possessionBall.png" )
-    --gsPossessionBall:setReferencePoint(display.TopLeftReferencePoint)
-    --gsPossessionBall.x, gsPossessionBall.y = 220, 109
+    local gsPossessionBall = display.newImage( "images/possessionBall.png" )
+    gsPossessionBall:setReferencePoint(display.TopLeftReferencePoint)
+    gsPossessionBall.x, gsPossessionBall.y = 220, 109
 
     local gsTeamTimeOutBg = display.newImage( "images/TimeOutOuterBg.png" )
     local gsTeamTimeOutLeft = display.newImage( "images/TimeOutLeft.png" )
@@ -43,7 +43,7 @@ function TSA.new()
     gsTeamScoreInfoBox:insert ( gsTeamScoreText )
     gsTeamScoreInfoBox:insert ( gsTeamTimeOutBox )
     gsTeamScoreInfoBox:insert ( gsTeamUserName )
-    --gsHomeTeamScoreInfoBox:insert ( gsPossessionBall )
+    gsTeamScoreInfoBox:insert ( gsPossessionBall )
 
     function gsTeamScoreInfoBox:setTeamName(name)
         gsTeamNameText.text = string.upper(name);
@@ -63,6 +63,10 @@ function TSA.new()
         gsTeamLogo.x, gsTeamLogo.y = -1, 25
         gsTeamScoreInfoBox:insert ( gsTeamLogo )
     end
+
+    function gsTeamScoreInfoBox:togglePossession(hasPos)
+        gsPossessionBall.isVisible = hasPos;
+    end;
 
     return gsTeamScoreInfoBox
 

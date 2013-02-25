@@ -48,13 +48,19 @@ local possession = 0; -- 0 = Home, 1 = Away
 function changePossession()
     if possession == 0 then
         possession = 1;
+        awayTeamScoreArea:togglePossession(true);
+        homeTeamScoreArea:togglePossession(false);
     else
+        homeTeamScoreArea:togglePossession(true);
+        awayTeamScoreArea:togglePossession(false);
         possession = 0;
     end
     yardsToGo = 10;
     currentDown = 1;
     currentYardLine = 100 - currentYardLine;
 
+    --update field markers
+    updateFieldMarkers();
     print("Other team is now on offense");
 end
 
@@ -73,6 +79,10 @@ function kickoff()
     end
     --update time
     currentTime = currentTime - 20;
+
+    --update field markers
+    updateFieldMarkers();
+
     print("Kickoff: " .. yards .. " yards");
     changePossession();
 end
@@ -90,6 +100,9 @@ function punt()
     changePossession();
     --update time
     currentTime = currentTime - 60;
+
+    --update field markers
+    updateFieldMarkers();
     print("PUNT: " .. yards .. " yards");
 end
 
@@ -145,8 +158,10 @@ function runPlays(e)
             --check time
             currentTime = currentTime - 30;
             if currentTime <= 0 then
+                currentTime = 0; --prevent showing the user negative time
                 currentQuarter = currentQuarter + 1;
                 if (currentQuarter == 5) then
+                    currentQuarter = 4; --prevent showing the user a quarter > 4
                     gameOver = true;
                     break;
                 else
@@ -175,13 +190,16 @@ function runPlays(e)
     --[CHECKS]
     if gameOver then --Game over
         print("Game Over");
-        storyboard.gotoScene( "menu", "fade", 1000 )
+        storyboard.gotoScene( "menu", "flipFadeOutIn", 200 )
     elseif currentYardLine < 1 then--Touchdown
         kickoff();
     elseif (yardsToGo < 1) then--First Down
         print("First Down! Pick 3 more plays");
         currentDown = 1;
         yardsToGo = 10;
+
+        --update field markers
+        updateFieldMarkers()
     else
         if (currentYardLine + 17 < 60) then
             local madeFieldGoal = fieldGoal();
@@ -196,14 +214,21 @@ function runPlays(e)
     end
 
     --[UPDATE] game screen
-    gameStatusArea:setTime(currentTime);
+    if currentTime >= 0 then
+        gameStatusArea:setTime(currentTime);
+    end
     gameStatusArea:setQuarter(currentQuarter);
     gameStatusArea:setDown(currentDown);
 
     homeTeamScoreArea:setScore(homeScore);
     awayTeamScoreArea:setScore(awayScore);
-    gameStatusArea:setTime(currentTime);
 
+end
+
+--Update field Markers
+function updateFieldMarkers()
+    field:updateFirstDownLine(currentYardLine - yardsToGo, possession);
+    field:updateLineOfScrimmage(currentYardLine, possession);
 end
 
 --[LISTENERS]
@@ -222,13 +247,15 @@ function scene:createScene( event )
 
     --Ryan's Layout Start
     local uiBackground = display.newImage( "images/UIBg.jpg" )
-
+    group:insert(uiBackground);
 
     --NavBar Layout
     navbar = Navbar.new();
+    group:insert(navbar);
 
     --GameScreen Home Team Score Area Layout
     homeTeamScoreArea = TeamScoreArea.new();
+    group:insert(homeTeamScoreArea);
     homeTeamScoreArea:setTeamName("Rock cats")
     homeTeamScoreArea:setLogo("images/TeamLogoBg-RC.png");
     homeTeamScoreArea:setUsername("Player 1");
@@ -237,6 +264,7 @@ function scene:createScene( event )
 
     --GameScreen Away Team Score Area Layout
     awayTeamScoreArea = TeamScoreArea.new();
+    group:insert(awayTeamScoreArea);
     awayTeamScoreArea:setTeamName("Cubs")
     awayTeamScoreArea:setLogo("images/TeamLogoBg-Cubs.png");
     awayTeamScoreArea:setUsername("Player 2");
@@ -246,6 +274,7 @@ function scene:createScene( event )
     --GameScreen Game Status Area Layout
 
     gameStatusArea = GameStatusArea.new();
+    group:insert(gameStatusArea);
     gameStatusArea:setQuarter(currentQuarter);
     gameStatusArea:setTime(currentTime);
     gameStatusArea:setDown(currentDown);
@@ -255,6 +284,7 @@ function scene:createScene( event )
 
     --GameScreen Choose Plays Area Layout
     choosePlaysArea = ChoosePlaysArea.new();
+    group:insert(choosePlaysArea);
     choosePlaysArea.x, choosePlaysArea.y = 648, 136
 
     --GameScreen Bottom Blue Buttons
@@ -262,6 +292,7 @@ function scene:createScene( event )
     local gsCallTOBg = display.newImage( "images/CallTimeOutBtn.png" )
     local gsCallTOText = display.newRetinaText("CALL TIMEOUT", 66,13, "Interstate", 26)
     local gsCallTOBtn = display.newGroup()
+    group:insert(gsCallTOBtn);
     gsCallTOBtn.x, gsCallTOBtn.y = 649, 603
 
     gsCallTOBtn:insert ( gsCallTOBg )
@@ -269,7 +300,8 @@ function scene:createScene( event )
 
     --local gsDrivesBg = display.newImage( "images/DrivesBtn.png" )
     local gsDrivesText = display.newRetinaText("DRIVES", 33,13, "Interstate", 26)
-    local gsDrivesBtn = display.newGroup()
+    local gsDrivesBtn = display.newGroup();
+    group:insert(gsDrivesBtn);
     gsDrivesBtn.x, gsDrivesBtn.y = 649, 671
 
     --gsDrivesBtn:insert ( gsDrivesBg )
@@ -277,7 +309,8 @@ function scene:createScene( event )
 
     --local gsStatsBg = display.newImage( "images/DrivesBtn.png" )
     local gsStatsText = display.newRetinaText("STATS", 38,13, "Interstate", 26)
-    local gsStatsBtn = display.newGroup()
+    local gsStatsBtn = display.newGroup();
+    group:insert(gsStatsBtn);
     gsStatsBtn.x, gsStatsBtn.y = 822, 671
 
     --gsStatsBtn:insert ( gsStatsBg )
@@ -285,6 +318,7 @@ function scene:createScene( event )
 
     --GameScreen Field Area
     field = Field.new();
+    group:insert(field);
     field.x, field.y = 40, 274;
 
     --Start game
@@ -296,10 +330,54 @@ end
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
     local group = self.view
+    --Reset Previous game
+    currentQuarter = 1;
+    currentTime = 900; -- in seconds
+    currentYardLine = 80;
+    homeScore = 0;
+    awayScore = 0;
+    currentDown = 1;
+    yardsToGo = 10;
+    homeTimeouts = 3;
+    awayTimeouts = 3;
+    possession = 0; -- 0 = Home, 1 = Away
+    if currentTime >= 0 then
+        gameStatusArea:setTime(currentTime);
+    end
+    gameStatusArea:setQuarter(currentQuarter);
+    gameStatusArea:setDown(currentDown);
 
+    homeTeamScoreArea:setScore(homeScore);
+    awayTeamScoreArea:setScore(awayScore);
+
+    --Do Coin Toss First
+    -- display scene overlay
+    local options =
+    {
+        effect = "fade",
+        time = 200,
+        isModal = true,
+        params = { parent = scene }
+    }
+
+    storyboard.showOverlay( "Scene_CoinToss", options )
+    print("show Overlay");
     --physics.start()
 
 end
+
+-- the following event is dispatched once the overlay is in place
+function scene:overlayBegan( event )
+    print( "Showing overlay: " .. event.sceneName )
+end
+scene:addEventListener( "overlayBegan" )
+
+-- the following event is dispatched once overlay is removed
+function scene:overlayEnded( event )
+    print(self.choice); --parameter from popup
+    print( "Overlay removed: " .. event.sceneName )
+end
+scene:addEventListener( "overlayEnded" )
 
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )

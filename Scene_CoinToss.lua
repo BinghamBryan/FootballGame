@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------------
 --
--- menu.lua
+-- Scene_CoinToss.lua
 --
 -----------------------------------------------------------------------------------------
 
@@ -8,118 +8,111 @@ local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
 
 -- include Corona's "widget" library
-local widget = require "widget"
+local widget = require "widget";
+local parent = nil;
 
 --------------------------------------------
 
 -- forward declarations and other locals
-local playBtn
-local layoutBtn
-
--- 'onRelease' event listener for playBtn
-local function onPlayBtnRelease()
-	-- go to game.lua scene
-	storyboard.gotoScene( "game", "flipFadeOutIn", 200 )
-	
-	return true	-- indicates successful touch
-end
-
-local function onLayoutBtnRelease()
-    -- go to gameScreenLayout.lua scene
-    storyboard.gotoScene( "gameScreenLayout", "fade", 500 )
-
-    return true	-- indicates successful touch
+local function onBtnRelease(event)
+    if (event.target.id == "heads") then
+        print("User selected Heads");
+        parent.choice = "Heads";
+    else
+        print("User selected Tails");
+        parent.choice = "Tails";
+    end
+    storyboard.hideOverlay("fade", 400);
 end
 
 -----------------------------------------------------------------------------------------
 -- BEGINNING OF YOUR IMPLEMENTATION
--- 
+--
 -- NOTE: Code outside of listener functions (below) will only be executed once,
 --		 unless storyboard.removeScene() is called.
--- 
+--
 -----------------------------------------------------------------------------------------
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
-	local group = self.view
-    local fontName = "Interstate";
+    local group = self.view;
+    parent = event.params.parent;
+    local popup = display.newGroup();
+    group:insert(popup);
+    local uiBackground =  display.newRect( 0, 0, display.contentWidth, display.contentHeight )
+    uiBackground:setFillColor( 50,50,50 )
+    uiBackground.alpha = 0.8;
 
-	-- display a background image
-	local background = display.newImageRect( "images/UIBg.jpg", display.contentWidth, display.contentHeight )
-	background:setReferencePoint( display.TopLeftReferencePoint )
-	background.x, background.y = 0, 0
-	
-	-- create/position logo/title image on upper-half of the screen
-	local titleLogo = display.newRetinaText( "Pocket Dynasty Football", 264, 42, fontName, 34)
-	titleLogo:setReferencePoint( display.CenterReferencePoint )
-	titleLogo.x = display.contentWidth * 0.5
-	titleLogo.y = 100
-	
-	-- create a widget button (which will loads game.lua on release)
-	playBtn = widget.newButton{
-		label="Play Now",
-		labelColor = { default={255}, over={128} },
-		default="images/ChoosePlayBtn.png",
-		width=250, height=60,
-		onRelease = onPlayBtnRelease,	-- event listener function
-        font = fontName,
-        fontSize = 26
-    }
-	playBtn:setReferencePoint( display.CenterReferencePoint )
-	playBtn.x = display.contentWidth*0.5
-	playBtn.y = display.contentHeight - 175
+    local content = display.newGroup();
 
-    -- create a widget button (which will loads game.lua on release)
-    layoutBtn = widget.newButton{
-        label="Layout View",
+    local contentBg = display.newRect( 0, 0, display.contentWidth*0.75, display.contentHeight*0.75 );
+    contentBg:setFillColor( 0,0,0 )
+
+    local header = display.newRetinaText("Coin Toss", 0, 0, "Interstate", 34);
+    header.x, header.y = display.contentWidth*0.375,25;
+
+    local headsBtn = widget.newButton{
+        id="heads",
+        label="Heads",
         labelColor = { default={255}, over={128} },
         default="images/ChoosePlayBtn.png",
         width=250, height=60,
-        onRelease = onLayoutBtnRelease,	-- event listener function
-        font = fontName,
+        onRelease = onBtnRelease,	-- event listener function
+        font = "Interstate",
+        fontSize = 26
+    }
+    headsBtn.x = display.contentWidth*0.375
+    headsBtn.y = 100;
+
+    -- create a widget button (which will loads game.lua on release)
+    local tailsBtn = widget.newButton{
+        id="tails",
+        label="Tails",
+        labelColor = { default={255}, over={128} },
+        default="images/ChoosePlayBtn.png",
+        width=250, height=60,
+        onRelease = onBtnRelease,	-- event listener function
+        font = "Interstate",
         fontSize = 26
     }
 
+    tailsBtn.x = display.contentWidth*0.375
+    tailsBtn.y = 200;
 
-    layoutBtn:setReferencePoint( display.CenterReferencePoint )
-    layoutBtn.x = display.contentWidth*0.5
-    layoutBtn.y = display.contentHeight - 75
-	
-	-- all display objects must be inserted into group
-	group:insert( background )
-	group:insert( titleLogo )
-	group:insert( playBtn )
-    group:insert( layoutBtn )
+    content:insert(contentBg);
+    content:insert(headsBtn);
+    content:insert(tailsBtn);
+    content:insert(header);
+    content:setReferencePoint(display.CenterReferencePoint);
+    content.x = display.contentWidth*0.5;
+    content.y = display.contentHeight * 0.5;
+
+    popup:insert(uiBackground);
+    popup:insert(content);
+    popup:setReferencePoint(display.CenterReferencePoint);
+    popup.x = display.contentWidth*0.5;
+    popup.y = display.contentHeight * 0.5;
 end
 
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
-	local group = self.view
-	
-	-- INSERT code here (e.g. start timers, load audio, start listeners, etc.)
-	
+    local group = self.view
+
+    -- INSERT code here (e.g. start timers, load audio, start listeners, etc.)
+
 end
 
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )
-	local group = self.view
-	
-	-- INSERT code here (e.g. stop timers, remove listenets, unload sounds, etc.)
-	
+    local group = self.view
+
+    -- INSERT code here (e.g. stop timers, remove listenets, unload sounds, etc.)
+
 end
 
 -- If scene's view is removed, scene:destroyScene() will be called just prior to:
 function scene:destroyScene( event )
-	local group = self.view
-	
-	if playBtn then
-		playBtn:removeSelf()	-- widgets must be manually removed
-		playBtn = nil
-    end
-    if layoutBtn then
-        layoutBtn:removeSelf()
-        layoutBtn = nil;
-    end
+    local group = self.view
 end
 
 -----------------------------------------------------------------------------------------
