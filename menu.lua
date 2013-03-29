@@ -14,7 +14,6 @@ local widget = require "widget"
 
 -- forward declarations and other locals
 local playBtn
-local layoutBtn
 
 -- 'onRelease' event listener for playBtn
 local function onPlayBtnRelease()
@@ -22,13 +21,6 @@ local function onPlayBtnRelease()
 	storyboard.gotoScene( "game", "flipFadeOutIn", 200 )
 	
 	return true	-- indicates successful touch
-end
-
-local function onLayoutBtnRelease()
-    -- go to gameScreenLayout.lua scene
-    storyboard.gotoScene( "gameScreenLayout", "fade", 500 )
-
-    return true	-- indicates successful touch
 end
 
 -----------------------------------------------------------------------------------------
@@ -69,27 +61,10 @@ function scene:createScene( event )
 	playBtn.x = display.contentWidth*0.5
 	playBtn.y = display.contentHeight - 175
 
-    -- create a widget button (which will loads game.lua on release)
-    layoutBtn = widget.newButton{
-        label="Layout View",
-        labelColor = { default={255}, over={128} },
-        default="images/ChoosePlayBtn.png",
-        width=250, height=60,
-        onRelease = onLayoutBtnRelease,	-- event listener function
-        font = fontName,
-        fontSize = 26
-    }
-
-
-    layoutBtn:setReferencePoint( display.CenterReferencePoint )
-    layoutBtn.x = display.contentWidth*0.5
-    layoutBtn.y = display.contentHeight - 75
-	
 	-- all display objects must be inserted into group
 	group:insert( background )
 	group:insert( titleLogo )
 	group:insert( playBtn )
-    group:insert( layoutBtn )
 end
 
 -- Called immediately after scene has moved onscreen:
