@@ -10,16 +10,16 @@ TSA = {};
 
 function TSA.new()
 
-    local gsTeamNameText = display.newRetinaText("", 0,0, "Interstate", 20)
+    local gsTeamNameText = display.newText("", 0,0, "Interstate", 20)
     gsTeamNameText:setReferencePoint( display.TopCenterReferencePoint );
     gsTeamNameText.x, gsTeamNameText.y = 0, 0
 
-    local gsTeamUserName = display.newRetinaText("", 0,0, "Interstate", 15)
+    local gsTeamUserName = display.newText("", 0,0, "Interstate", 15)
     gsTeamUserName:setReferencePoint( display.TopCenterReferencePoint );
     gsTeamUserName:setTextColor(136, 136, 136)
     gsTeamUserName.x, gsTeamUserName.y = 0, 138
 
-    local gsTeamScoreText = display.newRetinaText("", 0,0, "Interstate", 90)
+    local gsTeamScoreText = display.newText("", 0,0, "Interstate", 90)
     gsTeamScoreText:setReferencePoint( display.TopCenterReferencePoint );
     gsTeamScoreText.x, gsTeamScoreText.y = 178, 60
 

@@ -1,6 +1,14 @@
+--
+-- Created by IntelliJ IDEA.
+-- User: binghambryan
+-- Date: 3/22/13
+-- Time: 3:33 PM
+-- To change this template use File | Settings | File Templates.
+--
+
 -----------------------------------------------------------------------------------------
 --
--- temp.lua
+-- Scene_UserRegistration.lua
 --
 -----------------------------------------------------------------------------------------
 
@@ -10,26 +18,22 @@ local scene = storyboard.newScene()
 -- include Corona's "widget" library
 local widget = require "widget"
 
+local txtFirstName;
+local txtLastName;
 local txtUserName;
+local txtEmail;
 local txtPassword;
-local playBtn;
+local txtPasswordConfirm;
+
 --------------------------------------------
 
 -- forward declarations and other locals
-local function onLogin(event)
-    coronaCloud.loginAPI( txtUserName.text, txtPassword.text );
-end
-
 local function onRegister(event)
-    storyboard.gotoScene("Scene_UserRegistration");
-end
-
--- 'onRelease' event listener for playBtn
-local function onPlayBtnRelease()
-    -- go to game.lua scene
-    storyboard.gotoScene( "game", "flipFadeOutIn", 200 )
-
-    return true	-- indicates successful touch
+    if (txtPassword.text == txtPasswordConfirm.text) then
+        coronaCloud.registerUser( txtFirstName.text, txtLastName.text, txtUserName.text, txtEmail.text, txtPassword.text )
+    else
+        --Passwords don't match
+    end
 end
 
 -----------------------------------------------------------------------------------------
@@ -58,7 +62,7 @@ function scene:createScene( event )
     titleLogo.y = 100
     group:insert(titleLogo);
 
-    local header = display.newText( "Login", 264, 42, fontName, 28)
+    local header = display.newText( "Register", 264, 42, fontName, 28)
     header:setReferencePoint( display.CenterReferencePoint )
     header.x = display.contentWidth * 0.5
     header.y = 200;
@@ -71,26 +75,38 @@ function scene:createScene( event )
     loginBox:insert(txtUserName);
     txtUserName.x, txtUserName.y = 10, 30;
 
+    txtFirstName = native.newTextField( 10, 30, 180, 30 )
+    txtFirstName.text = "First Name"
+    --txtUserName:addEventListener( "userInput", inputListener )
+    loginBox:insert(txtFirstName);
+    txtFirstName.x, txtFirstName.y = 10, 90;
+
+    txtLastName = native.newTextField( 10, 30, 180, 30 )
+    txtLastName.text = "Last Name"
+    --txtUserName:addEventListener( "userInput", inputListener )
+    loginBox:insert(txtLastName);
+    txtLastName.x, txtLastName.y = 10, 150;
+
+    txtEmail = native.newTextField( 10, 30, 180, 30 )
+    txtEmail.text = "Email"
+    --txtUserName:addEventListener( "userInput", inputListener )
+    loginBox:insert(txtEmail);
+    txtEmail.x, txtEmail.y = 10, 210;
+
     txtPassword = native.newTextField( 10, 30, 180, 30 )
     txtPassword.text = "Password"
     --txtUserName:addEventListener( "userInput", inputListener )
     loginBox:insert(txtPassword);
-    txtPassword.x, txtPassword.y = 10, 90;
+    txtPassword.x, txtPassword.y = 10, 270;
 
-    local btnLogin = widget.newButton{
-        label="LOGIN",
-        labelColor = { default={255}, over={128} },
-        defaultFile="images/ChoosePlayBtn.png",
-        width=340, height=48,
-        onRelease = onLogin,	-- event listener function
-        font = "Interstate",
-        fontSize = 26
-    }
-    loginBox:insert(btnLogin);
-    btnLogin.x, btnLogin.y = 10, 150;
+    txtPasswordConfirm = native.newTextField( 10, 30, 180, 30 )
+    txtPasswordConfirm.text = "Confirm Password"
+    --txtUserName:addEventListener( "userInput", inputListener )
+    loginBox:insert(txtPasswordConfirm);
+    txtPasswordConfirm.x, txtPasswordConfirm.y = 10, 330;
 
     local btnRegister = widget.newButton{
-        label="REGISTER NEW USER",
+        label="REGISTER",
         labelColor = { default={255}, over={128} },
         defaultFile="images/ChoosePlayBtn.png",
         width=340, height=48,
@@ -98,29 +114,12 @@ function scene:createScene( event )
         font = "Interstate",
         fontSize = 26
     }
-
     loginBox:insert(btnRegister);
-    btnRegister.x, btnRegister.y = 10, 230;
+    btnRegister.x, btnRegister.y = 10, 390;
 
     loginBox:setReferencePoint(display.CenterReferencePoint);
     loginBox.x, loginBox.y = display.contentWidth * .5, display.contentHeight * .5;
     group:insert(loginBox);
-
-    -- add play button for testing so you don't have to login
-    playBtn = widget.newButton{
-        label="Play Now",
-        labelColor = { default={255}, over={128} },
-        defaultFile="images/ChoosePlayBtn.png",
-        width=250, height=60,
-        onRelease = onPlayBtnRelease,	-- event listener function
-        font = fontName,
-        fontSize = 26
-    }
-    playBtn:setReferencePoint( display.CenterReferencePoint )
-    playBtn.x = display.contentWidth*0.5
-    playBtn.y = display.contentHeight - 175
-    group:insert(playBtn);
-
 end
 
 -- Called immediately after scene has moved onscreen:
@@ -134,10 +133,14 @@ end
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )
     local group = self.view
-    txtUserName:removeSelf();
-    txtPassword:removeSelf();
-    -- INSERT code here (e.g. stop timers, remove listenets, unload sounds, etc.)
 
+    -- INSERT code here (e.g. stop timers, remove listenets, unload sounds, etc.)
+    txtEmail:removeSelf();
+    txtPassword:removeSelf();
+    txtPasswordConfirm:removeSelf();
+    txtUserName:removeSelf();
+    txtFirstName:removeSelf();
+    txtLastName:removeSelf();
 end
 
 -- If scene's view is removed, scene:destroyScene() will be called just prior to:

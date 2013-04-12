@@ -11,7 +11,9 @@ local widget = require("widget")
 local Navbar = require("Navbar");
 local TeamScoreArea = require("TeamScoreArea");
 local GameStatusArea = require("GameStatusArea");
-local ChoosePlaysArea = require("ChoosePlaysArea");
+local PlayContainer = require("PlayContainer");
+local OffensivePlays = require("OffensivePlays");
+local DefensivePlays = require("DefensivePlays");
 local Field = require("Field");
 
 -- include Corona's "physics" library
@@ -19,7 +21,6 @@ local physics = require "physics"
 physics.start(); physics.pause()
 --------------------------------------------
 --[GLOBALS]
-playContainers = {};
 
 --[VARIABLES]
 -- forward declarations and other locals
@@ -28,10 +29,16 @@ local navbar;
 local homeTeamScoreArea;
 local awayTeamScoreArea;
 local choosePlaysArea;
+local oPlays;
+local dPlays;
 local field;
 local gameStatusArea;
+local isOffenseTurn = true;
 
 --Game variables
+local playContainers = {};
+local offMove = {};
+local defMove = {};
 local currentQuarter = 1;
 local currentTime = 900; -- in seconds
 local currentYardLine = 80;
@@ -45,103 +52,18 @@ local possession = 0; -- 0 = Home, 1 = Away
 
 
 --[FUNCTIONS]
-function changePossession()
-    if possession == 0 then
-        possession = 1;
-        awayTeamScoreArea:togglePossession(true);
-        homeTeamScoreArea:togglePossession(false);
-    else
-        homeTeamScoreArea:togglePossession(true);
-        awayTeamScoreArea:togglePossession(false);
-        possession = 0;
-    end
-    yardsToGo = 10;
-    currentDown = 1;
-    currentYardLine = 100 - currentYardLine;
-
-    --update field markers
-    updateFieldMarkers();
-    print("Other team is now on offense");
-end
-
-function kickoff()
-    currentYardLine = 65;
-    local maxKick = 80;
-    local minKick = 50;
-    math.randomseed(os.time());
-    local yards = math.floor((maxKick - (maxKick - minKick)) * math.random()) + minKick;
-    currentYardLine = currentYardLine - yards;
-
-    --TO DO: program the return
-
-    if (currentYardLine < 1) then
-        currentYardLine = 20;
-    end
-    --update time
-    currentTime = currentTime - 20;
-
-    --update field markers
-    updateFieldMarkers();
-
-    print("Kickoff: " .. yards .. " yards");
-    changePossession();
-end
-
-function punt()
-    local maxPunt = 50;
-    local minPunt = 30;
-    math.randomseed(os.time());
-    local yards = math.floor((maxPunt - (maxPunt - minPunt)) * math.random()) + minPunt;
-    currentYardLine = currentYardLine - yards;
-
-    if (currentYardLine < 1) then
-        currentYardLine = 20;
-    end
-    changePossession();
-    --update time
-    currentTime = currentTime - 60;
-
-    --update field markers
-    updateFieldMarkers();
-    print("PUNT: " .. yards .. " yards");
-end
-
-function fieldGoal()
-    local fieldGoalLength = currentYardLine + 17;
-    local kickProbability = .95;
-    if (fieldGoalLength > 30 and fieldGoalLength < 40) then
-        kickProbability = .85;
-    elseif (fieldGoalLength >= 40 and fieldGoalLength < 50) then
-        kickProbability = .6
-    elseif (fieldGoalLength >=50) then
-        kickProbability = .3;
-    end
-    math.randomseed(os.time());
-    local madeKick = (kickProbability + math.random()) > 1;
-
-    if (madeKick) then
-        print("Field goal is good from " .. fieldGoalLength .. " yards out!")
-        if (possession == 0) then
-            homeScore = homeScore + 3;
-        else
-            awayScore = awayScore + 3;
-        end
-    else
-        print("Missed field goal from " .. fieldGoalLength .. " yards out");
-    end
-
-    return madeKick;
-end
-
 function runPlays(e)
     local self = e.target --the button
     local gameOver = false;
     local totalYardsGained = 0;
+    local resultsString = "";
     print("CURRENT YARD LINE: " .. currentYardLine);
-    for i = 0, #playContainers do
-        if (playContainers[i] ~= nil and yardsToGo > 0) then
+    for i = 0, #offMove do
+        if (offMove[i] ~= nil and yardsToGo > 0) then
             math.randomseed(os.time());
-            local play = playContainers[i].play;
+            local play = offMove[i];
+            --Check Defense
+
             local yards = math.floor(play.maxYards * math.random());
             local isPositive = (play.probability + math.random()) > 1;
 
@@ -150,8 +72,10 @@ function runPlays(e)
                 yardsToGo = yardsToGo - yards;
                 currentYardLine = currentYardLine - yards;
                 print("You gained " .. yards .. " Yards!");
+                resultsString = resultsString .. "You gained " .. yards .. " Yards!\n"
             else
                 print("Failed to gain yards");
+                resultsString = resultsString .. "Failed to gain yards\n";
             end
             currentDown = currentDown + 1;
 
@@ -192,9 +116,10 @@ function runPlays(e)
         print("Game Over");
         storyboard.gotoScene( "menu", "flipFadeOutIn", 200 )
     elseif currentYardLine < 1 then--Touchdown
-        kickoff();
+        scene:dispatchEvent({name = "onKickoff"});
     elseif (yardsToGo < 1) then--First Down
         print("First Down! Pick 3 more plays");
+        resultsString = resultsString .. "First Down! Pick 3 more plays\n";
         currentDown = 1;
         yardsToGo = 10;
 
@@ -202,14 +127,9 @@ function runPlays(e)
         updateFieldMarkers()
     else
         if (currentYardLine + 17 < 60) then
-            local madeFieldGoal = fieldGoal();
-            if (madeFieldGoal) then
-               kickoff();
-            else
-                changePossession();
-            end
+            scene:dispatchEvent({name = "onFieldGoal"})
         else
-            punt();
+            scene:dispatchEvent({name = "onPunt"});
         end
     end
 
@@ -222,13 +142,39 @@ function runPlays(e)
 
     homeTeamScoreArea:setScore(homeScore);
     awayTeamScoreArea:setScore(awayScore);
-
+    return resultsString;
 end
 
 --Update field Markers
 function updateFieldMarkers()
     field:updateFirstDownLine(currentYardLine - yardsToGo, possession);
     field:updateLineOfScrimmage(currentYardLine, possession);
+end
+
+--Save Plays
+function savePlays(type)
+    local plays = nil;
+    if (type == "offense") then
+        plays = offMove;
+    else
+        plays = defMove;
+    end
+    for i = 0, #playContainers do
+        if playContainers[i].hasPlay then
+            plays[i] = playContainers[i].play;
+        end
+    end
+end
+--Reset Plays
+function resetPlays()
+    for i = 0, #playContainers do
+        if playContainers[i].hasPlay then
+            playContainers[i].hasPlay = false;
+            playContainers[i].play.x = playContainers[i].play.homeX;
+            playContainers[i].play.y = playContainers[i].play.homeY;
+            playContainers[i].play = nil;
+        end
+    end
 end
 
 --[LISTENERS]
@@ -240,7 +186,7 @@ end
 --		 unless storyboard.removeScene() is called.
 --
 -----------------------------------------------------------------------------------------
-
+--[SCENE EVENTS]
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
     local group = self.view
@@ -283,14 +229,49 @@ function scene:createScene( event )
 
 
     --GameScreen Choose Plays Area Layout
-    choosePlaysArea = ChoosePlaysArea.new();
+
+    choosePlaysArea = display.newGroup();
+    --local gsChoosePlaysOuterBg = display.newImage( "images/ChoosePlayOuterBg.png" )
+    --gsChoosePlaysOuterBg:setReferencePoint(display.TopLeftReferencePoint)
+    --gsChoosePlaysOuterBg.x, gsChoosePlaysOuterBg.y = 0, 59
+    --gsChoosePlaysFullGroup:insert ( gsChoosePlaysOuterBg )
+    local runPlaysButton = widget.newButton{
+        label="CHOOSE YOUR PLAYS",
+        labelColor = { default={255}, over={128} },
+        defaultFile="images/ChoosePlayBtn.png",
+        width=340, height=48,
+        onRelease = onPlayBtnRelease,	-- event listener function
+        font = "Interstate",
+        fontSize = 26
+    }
+    choosePlaysArea:insert(runPlaysButton);
+    --Create 3 containers
+    for i = 0, 2 do
+        local playc = PlayContainer.new();
+        playc:setText(i + 1);
+        playc.x, playc.y = 13 + (i * 89), 73
+        playc.hasPlay = false;
+        choosePlaysArea:insert(playc);
+        playContainers[i] = playc;
+    end
+    --gsChoosePlaysFullGroup:insert();
+    oPlays = OffensivePlays.new();
+    choosePlaysArea:insert(oPlays);
+    dPlays = DefensivePlays.new();
+    choosePlaysArea:insert(dPlays);
+    dPlays.isVisible = false;
+    local gsPowerMeterBg = display.newImage ( "images/PowerMeter.png" )
+    gsPowerMeterBg:setReferencePoint( display.TopLeftReferencePoint )
+    gsPowerMeterBg.x, gsPowerMeterBg.y = 283, 177
+
+    choosePlaysArea:insert ( gsPowerMeterBg )
     group:insert(choosePlaysArea);
     choosePlaysArea.x, choosePlaysArea.y = 648, 136
 
     --GameScreen Bottom Blue Buttons
 
     local gsCallTOBg = display.newImage( "images/CallTimeOutBtn.png" )
-    local gsCallTOText = display.newRetinaText("CALL TIMEOUT", 66,13, "Interstate", 26)
+    local gsCallTOText = display.newText("CALL TIMEOUT", 66,13, "Interstate", 26)
     local gsCallTOBtn = display.newGroup()
     group:insert(gsCallTOBtn);
     gsCallTOBtn.x, gsCallTOBtn.y = 649, 603
@@ -299,7 +280,7 @@ function scene:createScene( event )
     gsCallTOBtn:insert ( gsCallTOText )
 
     --local gsDrivesBg = display.newImage( "images/DrivesBtn.png" )
-    local gsDrivesText = display.newRetinaText("DRIVES", 33,13, "Interstate", 26)
+    local gsDrivesText = display.newText("DRIVES", 33,13, "Interstate", 26)
     local gsDrivesBtn = display.newGroup();
     group:insert(gsDrivesBtn);
     gsDrivesBtn.x, gsDrivesBtn.y = 649, 671
@@ -308,7 +289,7 @@ function scene:createScene( event )
     gsDrivesBtn:insert ( gsDrivesText )
 
     --local gsStatsBg = display.newImage( "images/DrivesBtn.png" )
-    local gsStatsText = display.newRetinaText("STATS", 38,13, "Interstate", 26)
+    local gsStatsText = display.newText("STATS", 38,13, "Interstate", 26)
     local gsStatsBtn = display.newGroup();
     group:insert(gsStatsBtn);
     gsStatsBtn.x, gsStatsBtn.y = 822, 671
@@ -321,9 +302,12 @@ function scene:createScene( event )
     group:insert(field);
     field.x, field.y = 40, 274;
 
-    --Start game
-    possession = 0;
-    kickoff();
+    --Add Event Listeners
+    scene:addEventListener("onPossessionChange");
+    scene:addEventListener("onPunt");
+    scene:addEventListener("onFieldGoal");
+    scene:addEventListener("onKickoff");
+    scene:addEventListener("onSendPlays");
 
 end
 
@@ -362,22 +346,22 @@ function scene:enterScene( event )
 
     storyboard.showOverlay( "Scene_CoinToss", options )
     print("show Overlay");
-    --physics.start()
 
+    --Start game
+    possession = 0;
+    scene:dispatchEvent({name = "onKickoff" });
 end
 
 -- the following event is dispatched once the overlay is in place
 function scene:overlayBegan( event )
     print( "Showing overlay: " .. event.sceneName )
 end
-scene:addEventListener( "overlayBegan" )
 
 -- the following event is dispatched once overlay is removed
 function scene:overlayEnded( event )
     print(self.choice); --parameter from popup
     print( "Overlay removed: " .. event.sceneName )
 end
-scene:addEventListener( "overlayEnded" )
 
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )
@@ -394,6 +378,219 @@ function scene:destroyScene( event )
     --package.loaded[physics] = nil
     --dsphysics = nil
 end
+
+--[FOOTBALL EVENTS]
+function scene:onPossessionChange(event)
+    if possession == 0 then
+        possession = 1;
+        awayTeamScoreArea:togglePossession(true);
+        homeTeamScoreArea:togglePossession(false);
+    else
+        homeTeamScoreArea:togglePossession(true);
+        awayTeamScoreArea:togglePossession(false);
+        possession = 0;
+    end
+    yardsToGo = 10;
+    currentDown = 1;
+    currentYardLine = 100 - currentYardLine;
+
+    --update field markers
+    updateFieldMarkers();
+    print("Other team is now on offense");
+end
+
+function scene:onKickoff(event)
+    currentYardLine = 65;
+    local maxKick = 80;
+    local minKick = 50;
+    math.randomseed(os.time());
+    local yards = math.floor((maxKick - (maxKick - minKick)) * math.random()) + minKick;
+    currentYardLine = currentYardLine - yards;
+
+    --TO DO: program the return
+
+    if (currentYardLine < 1) then
+        currentYardLine = 20;
+    end
+    --update time
+    currentTime = currentTime - 20;
+
+    --update field markers
+    updateFieldMarkers();
+
+    print("Kickoff: " .. yards .. " yards");
+    scene:dispatchEvent({name = "onPossessionChange"});
+end
+
+function scene:onPunt(event)
+    local maxPunt = 50;
+    local minPunt = 30;
+    math.randomseed(os.time());
+    local yards = math.floor((maxPunt - (maxPunt - minPunt)) * math.random()) + minPunt;
+    currentYardLine = currentYardLine - yards;
+
+    if (currentYardLine < 1) then
+        currentYardLine = 20;
+    end
+    scene:dispatchEvent({name = "onPossessionChange"});
+    --update time
+    currentTime = currentTime - 60;
+
+    --update field markers
+    updateFieldMarkers();
+    print("PUNT: " .. yards .. " yards");
+end
+
+function scene:onFieldGoal(event)
+    local fieldGoalLength = currentYardLine + 17;
+    local kickProbability = .95;
+    if (fieldGoalLength > 30 and fieldGoalLength < 40) then
+        kickProbability = .85;
+    elseif (fieldGoalLength >= 40 and fieldGoalLength < 50) then
+        kickProbability = .6
+    elseif (fieldGoalLength >=50) then
+        kickProbability = .3;
+    end
+    math.randomseed(os.time());
+    local madeKick = (kickProbability + math.random()) > 1;
+
+    if (madeKick) then
+        print("Field goal is good from " .. fieldGoalLength .. " yards out!")
+        if (possession == 0) then
+            homeScore = homeScore + 3;
+        else
+            awayScore = awayScore + 3;
+        end
+    else
+        print("Missed field goal from " .. fieldGoalLength .. " yards out");
+    end
+
+    if (madeKick) then
+        scene:dispatchEvent({name = "onKickoff"});
+    else
+        scene:dispatchEvent({name = "onPossessionChange"});
+    end
+end
+
+--[GAME EVENTS]
+function scene:onSendPlays(event)
+    if (event.type == "offense") then
+        savePlays("offense");
+        resetPlays();
+        oPlays.isVisible = false;
+        dPlays.isVisible = true;
+        isOffenseTurn = false;
+        local options =
+        {
+            effect = "fade",
+            time = 200,
+            isModal = true,
+            params = { parent = scene }
+        }
+
+        storyboard.showOverlay( "Scene_Ready", options )
+    else
+        savePlays("defense");
+        local results = runPlays(event);
+        resetPlays();
+        oPlays.isVisible = true;
+        dPlays.isVisible = false;
+        isOffenseTurn = true;
+
+        local options =
+        {
+            effect = "fade",
+            time = 200,
+            isModal = true,
+            params = { parent = scene, results = results }
+        }
+
+        storyboard.showOverlay( "Scene_Result", options )
+    end
+end
+--[BUTTON EVENTS]
+function onPlayBtnRelease(event)
+    local has3plays = true;
+    for i = 0, #playContainers do
+        if playContainers[i].hasPlay then
+            --do nothing
+        else
+            has3plays = false;
+        end
+    end
+    if has3plays then
+        if (isOffenseTurn) then
+            scene:dispatchEvent({name = "onSendPlays", type = "offense"});
+        else
+            scene:dispatchEvent({name = "onSendPlays", type = "defense"});
+        end
+    else
+        print("Please choose 3 plays");
+    end
+end
+
+--[TOUCH EVENTS]
+function playsListener(event)
+    local self = event.target;
+    local sizeX, sizeY = 80, 80
+    local playSizeW, playSizeH = 80, 80;
+
+    if event.phase == "began" then
+
+        self.markX = self.x    -- store x location of object
+        self.markY = self.y    -- store y location of object
+
+    elseif event.phase == "moved" and self.markX ~= nil then
+
+        local x = (event.x - event.xStart) + self.markX
+        local y = (event.y - event.yStart) + self.markY
+
+        self.x, self.y = x, y    -- move object based on calculations above
+
+        for i = 0, #playContainers do
+            local posX, posY =  playContainers[i].x, playContainers[i].y;
+
+            -- do your code to check to see if your object is in your container
+            if (((x >= (posX - ((2/3) * sizeX))) and (y >= (posY - ((1/3) * sizeY))) and (x <= (posX + ((2/3) * sizeX))) and (y <= (posY + ((1/3) * sizeY)))) or ((x >= (posX - ((1/3) * sizeX))) and (y >= (posY - ((2/3) * sizeY))) and (x <= (posX + ((1/3) * sizeX))) and (y <= (posY + ((2/3) * sizeY)))) or ((x >= (posX - ((1/2) * sizeX))) and (y >= (posY - ((1/2) * sizeY))) and (x <= (posX + ((1/2) * sizeX))) and (y <= (posY + ((1/2) * sizeY))))) then
+                playContainers[i]:setText( "YES" )
+            else
+                playContainers[i]:setText( "NO" )
+            end
+        end
+
+    elseif event.phase == "ended" and self.markX ~= nil then
+
+        local x = (event.x - event.xStart) + self.markX
+        local y = (event.y - event.yStart) + self.markY
+        local isInContainer = false;
+
+        for i = 0, #playContainers do
+            local posX, posY =  playContainers[i].x, playContainers[i].y;
+            -- main condition: I calculated 3 areas to attract the object to the target container, 2 areas that atract it when it's 1/3 in the target and 1 area that atract it when it's 1/4 in the target
+            if (((x >= (posX - ((2/3) * sizeX))) and (y >= (posY - ((1/3) * sizeY))) and (x <= (posX + ((2/3) * sizeX))) and (y <= (posY + ((1/3) * sizeY)))) or ((x >= (posX - ((1/3) * sizeX))) and (y >= (posY - ((2/3) * sizeY))) and (x <= (posX + ((1/3) * sizeX))) and (y <= (posY + ((2/3) * sizeY)))) or ((x >= (posX - ((1/2) * sizeX))) and (y >= (posY - ((1/2) * sizeY))) and (x <= (posX + ((1/2) * sizeX))) and (y <= (posY + ((1/2) * sizeY))))) then
+                --check to see if there is already a play there
+                if (playContainers[i].hasPlay) then
+                    local play = playContainers[i].play;
+                    play.x = play.homeX;
+                    play.y = play.homeY;
+                    playContainers[i].play = nil;
+                    playContainers[i].hasPlay = false;
+                end
+                self.x, self.y = posX, posY;
+                playContainers[i].hasPlay = true;
+                playContainers[i].play = self;
+                isInContainer = true;
+                print("play added");
+                break;
+            end
+            if (isInContainer == false) then
+                self.x, self.y = self.homeX, self.homeY;
+            end
+        end
+    end
+    return true
+end
+
 
 -----------------------------------------------------------------------------------------
 -- END OF YOUR IMPLEMENTATION
@@ -412,6 +609,9 @@ scene:addEventListener( "exitScene", scene )
 -- automatically unloaded in low memory situations, or explicitly via a call to
 -- storyboard.purgeScene() or storyboard.removeScene().
 scene:addEventListener( "destroyScene", scene )
+
+scene:addEventListener( "overlayBegan" )
+scene:addEventListener( "overlayEnded" )
 
 -----------------------------------------------------------------------------------------
 

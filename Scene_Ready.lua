@@ -1,6 +1,14 @@
+--
+-- Created by IntelliJ IDEA.
+-- User: binghambryan
+-- Date: 4/12/13
+-- Time: 3:08 PM
+-- To change this template use File | Settings | File Templates.
+--
+
 -----------------------------------------------------------------------------------------
 --
--- Scene_CoinToss.lua
+-- Scene_Ready.lua
 --
 -----------------------------------------------------------------------------------------
 
@@ -8,20 +16,12 @@ local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
 
 -- include Corona's "widget" library
-local widget = require "widget";
-local parent = nil;
+local widget = require "widget"
 
 --------------------------------------------
 
 -- forward declarations and other locals
 local function onBtnRelease(event)
-    if (event.target.id == "heads") then
-        print("User selected Heads");
-        parent.choice = "Heads";
-    else
-        print("User selected Tails");
-        parent.choice = "Tails";
-    end
     storyboard.hideOverlay("fade", 400);
 end
 
@@ -48,12 +48,12 @@ function scene:createScene( event )
     local contentBg = display.newRect( 0, 0, display.contentWidth*0.75, display.contentHeight*0.75 );
     contentBg:setFillColor( 0,0,0 )
 
-    local header = display.newText("Coin Toss", 0, 0, "Interstate", 34);
+    local header = display.newText("Player Ready?", 0, 0, "Interstate", 34);
     header.x, header.y = display.contentWidth*0.375,25;
 
-    local headsBtn = widget.newButton{
-        id="heads",
-        label="Heads",
+    local readyBtn = widget.newButton{
+        id="ready",
+        label="Ready",
         labelColor = { default={255}, over={128} },
         defaultFile="images/ChoosePlayBtn.png",
         width=250, height=60,
@@ -61,27 +61,11 @@ function scene:createScene( event )
         font = "Interstate",
         fontSize = 26
     }
-    headsBtn.x = display.contentWidth*0.375
-    headsBtn.y = 100;
-
-    -- create a widget button (which will loads game.lua on release)
-    local tailsBtn = widget.newButton{
-        id="tails",
-        label="Tails",
-        labelColor = { default={255}, over={128} },
-        defaultFile="images/ChoosePlayBtn.png",
-        width=250, height=60,
-        onRelease = onBtnRelease,	-- event listener function
-        font = "Interstate",
-        fontSize = 26
-    }
-
-    tailsBtn.x = display.contentWidth*0.375
-    tailsBtn.y = 200;
+    readyBtn.x = display.contentWidth*0.375
+    readyBtn.y = 100;
 
     content:insert(contentBg);
-    content:insert(headsBtn);
-    content:insert(tailsBtn);
+    content:insert(readyBtn);
     content:insert(header);
     content:setReferencePoint(display.CenterReferencePoint);
     content.x = display.contentWidth*0.5;

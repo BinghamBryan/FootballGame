@@ -42,7 +42,7 @@ function scene:createScene( event )
 	background.x, background.y = 0, 0
 	
 	-- create/position logo/title image on upper-half of the screen
-	local titleLogo = display.newRetinaText( "Pocket Dynasty Football", 264, 42, fontName, 34)
+	local titleLogo = display.newText( "Pocket Dynasty Football", 264, 42, fontName, 34)
 	titleLogo:setReferencePoint( display.CenterReferencePoint )
 	titleLogo.x = display.contentWidth * 0.5
 	titleLogo.y = 100
@@ -51,7 +51,7 @@ function scene:createScene( event )
 	playBtn = widget.newButton{
 		label="Play Now",
 		labelColor = { default={255}, over={128} },
-		default="images/ChoosePlayBtn.png",
+		defaultFile="images/ChoosePlayBtn.png",
 		width=250, height=60,
 		onRelease = onPlayBtnRelease,	-- event listener function
         font = fontName,
