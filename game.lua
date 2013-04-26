@@ -56,6 +56,16 @@ function runPlays(e)
     local self = e.target --the button
     local gameOver = false;
     local totalYardsGained = 0;
+    local resultsTable = {};
+    resultsTable.offensivePlays = offMove;
+    resultsTable.defensivePlays = defMove;
+    resultsTable.isTouchdown = false;
+    resultsTable.isFirstDown = false;
+    resultsTable.isFieldGoal = false;
+    resultsTable.FieldGoalLength = 0;
+    resultsTable.isPunt = false;
+    resultsTable.puntLength = 0;
+    resultsTable.yardLine = currentYardLine;
     local resultsString = "";
     print("CURRENT YARD LINE: " .. currentYardLine);
     for i = 0, #offMove do
@@ -63,19 +73,47 @@ function runPlays(e)
             math.randomseed(os.time());
             local play = offMove[i];
             --Check Defense
-
+            local playModifier = 0;
+            if (play.playType == defMove[i].playType) then
+                if (play.playDirection == defMove[i].playDirection) then
+                   playModifier = 0; --Perfect guess
+                   print("Defesne guessed right");
+                else
+                    playModifier = 1;
+                    print("Defense guessed play type correctly");
+                end
+            else
+                if (offMove[i].playDirection == defMove[i].playDirection) then
+                    playModifier = 1;
+                    print("Defense guessed play direction correctly");
+                else
+                    playModifier = 2;
+                    print("Defense guessed wrong");
+                end
+            end
             local yards = math.floor(play.maxYards * math.random());
             local isPositive = (play.probability + math.random()) > 1;
+            
+            if (playModifier == 0) then
+                isPositive = false;
+            elseif (playModifier == 2) then
+                isPositive = true; 
+            end
+            
+            --Include play modifier
+            yards = yards * playModifier;
 
             if (isPositive) then
                 totalYardsGained = totalYardsGained + yards;
                 yardsToGo = yardsToGo - yards;
                 currentYardLine = currentYardLine - yards;
                 print("You gained " .. yards .. " Yards!");
-                resultsString = resultsString .. "You gained " .. yards .. " Yards!\n"
+                resultsString = resultsString .. "You gained " .. yards .. " Yards!\n";
+                resultsTable.offensivePlays[i].result = yards;
             else
                 print("Failed to gain yards");
                 resultsString = resultsString .. "Failed to gain yards\n";
+                resultsTable.offensivePlays[i].result = 0;
             end
             currentDown = currentDown + 1;
 
@@ -101,6 +139,7 @@ function runPlays(e)
             --check for Touchdown
             if currentYardLine < 1 then
                 print("TOUCHDOWN!");
+                resultsTable.isTouchdown = true;
                 if (possession == 0) then
                     homeScore = homeScore + 7;
                 else
@@ -120,6 +159,7 @@ function runPlays(e)
     elseif (yardsToGo < 1) then--First Down
         print("First Down! Pick 3 more plays");
         resultsString = resultsString .. "First Down! Pick 3 more plays\n";
+        resultsTable.isFirstDown = true;
         currentDown = 1;
         yardsToGo = 10;
 
@@ -127,8 +167,10 @@ function runPlays(e)
         updateFieldMarkers()
     else
         if (currentYardLine + 17 < 60) then
+            resultsTable.isFieldGoal = true;
             scene:dispatchEvent({name = "onFieldGoal"})
         else
+            resultsTable.isPunt = true;
             scene:dispatchEvent({name = "onPunt"});
         end
     end
@@ -142,7 +184,7 @@ function runPlays(e)
 
     homeTeamScoreArea:setScore(homeScore);
     awayTeamScoreArea:setScore(awayScore);
-    return resultsString;
+    return resultsTable;
 end
 
 --Update field Markers
@@ -443,13 +485,13 @@ end
 
 function scene:onFieldGoal(event)
     local fieldGoalLength = currentYardLine + 17;
-    local kickProbability = .95;
+    local kickProbability = .99;
     if (fieldGoalLength > 30 and fieldGoalLength < 40) then
-        kickProbability = .85;
+        kickProbability = .9;
     elseif (fieldGoalLength >= 40 and fieldGoalLength < 50) then
-        kickProbability = .6
+        kickProbability = .75
     elseif (fieldGoalLength >=50) then
-        kickProbability = .3;
+        kickProbability = .5;
     end
     math.randomseed(os.time());
     local madeKick = (kickProbability + math.random()) > 1;

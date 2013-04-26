@@ -20,7 +20,9 @@ function OP.new()
     playPassDeepLeft:addEventListener("touch", playsListener)
     playPassDeepLeft.name = "Deep Pass Left";
     playPassDeepLeft.maxYards = 50;
-    playPassDeepLeft.probability = .2;
+    playPassDeepLeft.probability = .3;
+    playPassDeepLeft.playType = "PD";
+    playPassDeepLeft.playDirection = "Left";
     plays[0] = playPassDeepLeft;
     gsChoosePlaysFullGroup:insert(playPassDeepLeft);
 
@@ -31,7 +33,9 @@ function OP.new()
     playPassDeepMiddle:addEventListener("touch", playsListener)
     playPassDeepMiddle.name = "Deep Pass Middle";
     playPassDeepMiddle.maxYards = 35;
-    playPassDeepMiddle.probability = .2;
+    playPassDeepMiddle.probability = .3;
+    playPassDeepMiddle.playType = "PD";
+    playPassDeepMiddle.playDirection = "Middle";
     plays[1] = playPassDeepMiddle;
     gsChoosePlaysFullGroup:insert(playPassDeepMiddle);
 
@@ -42,7 +46,9 @@ function OP.new()
     playPassDeepRight:addEventListener("touch", playsListener)
     playPassDeepRight.name = "Deep Pass Right";
     playPassDeepRight.maxYards = 50;
-    playPassDeepRight.probability = .2;
+    playPassDeepRight.probability = .3;
+    playPassDeepRight.playType = "PD";
+    playPassDeepRight.playDirection = "Right";
     plays[2] = playPassDeepRight;
     gsChoosePlaysFullGroup:insert(playPassDeepRight);
 
@@ -53,7 +59,9 @@ function OP.new()
     playPassShortLeft:addEventListener("touch", playsListener)
     playPassShortLeft.name = "Deep Short Left";
     playPassShortLeft.maxYards = 20;
-    playPassShortLeft.probability = .5;
+    playPassShortLeft.probability = .6;
+    playPassShortLeft.playType = "PS";
+    playPassShortLeft.playDirection = "Left";
     plays[3] = playPassShortLeft;
     gsChoosePlaysFullGroup:insert(playPassShortLeft);
 
@@ -64,7 +72,9 @@ function OP.new()
     playPassShortMiddle:addEventListener("touch", playsListener)
     playPassShortMiddle.name = "Deep Short Middle";
     playPassShortMiddle.maxYards = 15;
-    playPassShortMiddle.probability = .5;
+    playPassShortMiddle.probability = .6;
+    playPassShortMiddle.playType = "PS";
+    playPassShortMiddle.playDirection = "Middle";
     plays[4] = playPassShortMiddle;
     gsChoosePlaysFullGroup:insert(playPassShortMiddle);
 
@@ -75,7 +85,9 @@ function OP.new()
     playPassShortRight:addEventListener("touch", playsListener)
     playPassShortRight.name = "Deep Short Right";
     playPassShortRight.maxYards = 20;
-    playPassShortRight.probability = .5;
+    playPassShortRight.probability = .6;
+    playPassShortRight.playType = "PS";
+    playPassShortRight.playDirection = "Right";
     plays[5] = playPassShortRight;
     gsChoosePlaysFullGroup:insert(playPassShortRight);
 
@@ -87,6 +99,8 @@ function OP.new()
     playRunLeft.name = "Run Left";
     playRunLeft.maxYards = 15;
     playRunLeft.probability = .8;
+    playRunLeft.playType = "R";
+    playRunLeft.playDirection = "Left";
     plays[6] = playRunLeft;
     gsChoosePlaysFullGroup:insert(playRunLeft);
 
@@ -98,6 +112,8 @@ function OP.new()
     playRunMiddle.name = "Run Middle";
     playRunMiddle.maxYards = 10;
     playRunMiddle.probability = .9;
+    playRunMiddle.playType = "R";
+    playRunMiddle.playDirection = "Middle";
     plays[7] = playRunMiddle;
     gsChoosePlaysFullGroup:insert(playRunMiddle);
 
@@ -109,6 +125,8 @@ function OP.new()
     playRunRight.name = "Run Right";
     playRunRight.maxYards = 15;
     playRunRight.probability = .8;
+    playRunRight.playType = "R";
+    playRunRight.playDirection = "Right";
     plays[8] = playRunRight;
     gsChoosePlaysFullGroup:insert(playRunRight);
 

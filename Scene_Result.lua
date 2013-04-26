@@ -37,6 +37,7 @@ end
 function scene:createScene( event )
     local group = self.view;
     parent = event.params.parent;
+    local results = event.params.results;
     local popup = display.newGroup();
     group:insert(popup);
     local uiBackground =  display.newRect( 0, 0, display.contentWidth, display.contentHeight )
@@ -44,15 +45,29 @@ function scene:createScene( event )
     uiBackground.alpha = 0.8;
 
     local content = display.newGroup();
+    local playResultsText = display.newGroup();
 
     local contentBg = display.newRect( 0, 0, display.contentWidth*0.75, display.contentHeight*0.75 );
     contentBg:setFillColor( 0,0,0 )
-
-    local header = display.newText("Result!", 0, 0, "Interstate", 34);
+    
+    local headerText = "Result!";
+    if (results.isFirstDown) then
+        headerText = "First Down";
+    elseif (results.isPunt) then
+        headerText = "Punt";
+    elseif (results.isFieldGoal) then
+        headerText = "Field Goal";
+    end
+    local header = display.newText(headerText, 0, 0, "Interstate", 34);
     header.x, header.y = display.contentWidth*0.375,25;
-
-    local results = display.newText(event.params.results, 0, 0, "Interstate", 16);
-    results.x, results.y = display.contentWidth*0.375,100;
+    for i = 0, #results.offensivePlays do
+        if (results.offensivePlays[i].result ~= nil) then
+            local text = results.offensivePlays[i].name .. " = " .. results.offensivePlays[i].result .. " yards";
+            local resultsText = display.newText(text, 0, 0, "Interstate", 16);
+            resultsText.x, resultsText.y = display.contentWidth*0.375,100*(i+1);
+            playResultsText:insert(resultsText);
+        end
+    end
 
     local readyBtn = widget.newButton{
         id="continue",
@@ -70,7 +85,7 @@ function scene:createScene( event )
     content:insert(contentBg);
     content:insert(readyBtn);
     content:insert(header);
-    content:insert(results);
+    content:insert(playResultsText);
     content:setReferencePoint(display.CenterReferencePoint);
     content.x = display.contentWidth*0.5;
     content.y = display.contentHeight * 0.5;

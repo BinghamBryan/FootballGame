@@ -21,6 +21,8 @@ function DP.new()
     playPassDeepLeft.name = "Defend Pass Left";
     playPassDeepLeft.maxYards = 50;
     playPassDeepLeft.probability = .2;
+    playPassDeepLeft.playType = "PD";
+    playPassDeepLeft.playDirection = "Left";
     plays[0] = playPassDeepLeft;
     gsChoosePlaysFullGroup:insert(playPassDeepLeft);
 
@@ -32,6 +34,8 @@ function DP.new()
     playPassDeepMiddle.name = "Defend Pass Middle";
     playPassDeepMiddle.maxYards = 35;
     playPassDeepMiddle.probability = .2;
+    playPassDeepMiddle.playType = "PD";
+    playPassDeepMiddle.playDirection = "Middle";
     plays[1] = playPassDeepMiddle;
     gsChoosePlaysFullGroup:insert(playPassDeepMiddle);
 
@@ -43,6 +47,8 @@ function DP.new()
     playPassDeepRight.name = "Defend Pass Right";
     playPassDeepRight.maxYards = 50;
     playPassDeepRight.probability = .2;
+    playPassDeepRight.playType = "PD";
+    playPassDeepRight.playDirection = "Right";
     plays[2] = playPassDeepRight;
     gsChoosePlaysFullGroup:insert(playPassDeepRight);
 
@@ -54,6 +60,8 @@ function DP.new()
     playPassShortLeft.name = "Defend Short Left";
     playPassShortLeft.maxYards = 20;
     playPassShortLeft.probability = .5;
+    playPassShortLeft.playType = "PS";
+    playPassShortLeft.playDirection = "Left";
     plays[3] = playPassShortLeft;
     gsChoosePlaysFullGroup:insert(playPassShortLeft);
 
@@ -65,6 +73,8 @@ function DP.new()
     playPassShortMiddle.name = "Defend Short Middle";
     playPassShortMiddle.maxYards = 15;
     playPassShortMiddle.probability = .5;
+    playPassShortMiddle.playType = "PS";
+    playPassShortMiddle.playDirection = "Middle";
     plays[4] = playPassShortMiddle;
     gsChoosePlaysFullGroup:insert(playPassShortMiddle);
 
@@ -76,6 +86,8 @@ function DP.new()
     playPassShortRight.name = "Defend Short Right";
     playPassShortRight.maxYards = 20;
     playPassShortRight.probability = .5;
+    playPassShortRight.playType = "PS";
+    playPassShortRight.playDirection = "Right";
     plays[5] = playPassShortRight;
     gsChoosePlaysFullGroup:insert(playPassShortRight);
 
@@ -87,6 +99,8 @@ function DP.new()
     playRunLeft.name = "Defend Run Left";
     playRunLeft.maxYards = 15;
     playRunLeft.probability = .8;
+    playRunLeft.playType = "R";
+    playRunLeft.playDirection = "Left";
     plays[6] = playRunLeft;
     gsChoosePlaysFullGroup:insert(playRunLeft);
 
@@ -98,6 +112,8 @@ function DP.new()
     playRunMiddle.name = "Defend Run Middle";
     playRunMiddle.maxYards = 10;
     playRunMiddle.probability = .9;
+    playRunMiddle.playType = "R";
+    playRunMiddle.playDirection = "Middle";
     plays[7] = playRunMiddle;
     gsChoosePlaysFullGroup:insert(playRunMiddle);
 
@@ -109,6 +125,8 @@ function DP.new()
     playRunRight.name = "Defend Run Right";
     playRunRight.maxYards = 15;
     playRunRight.probability = .8;
+    playRunRight.playType = "R";
+    playRunRight.playDirection = "Right";
     plays[8] = playRunRight;
     gsChoosePlaysFullGroup:insert(playRunRight);
 

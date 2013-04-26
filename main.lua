@@ -49,5 +49,5 @@ Runtime:addEventListener( "LoginError", loginFailure );
 --Start
 -- load menu screen
 --storyboard.gotoScene( "Scene_Login" );
-storyboard.gotoScene( "Scene_Login" )
+storyboard.gotoScene( "menu" )
 

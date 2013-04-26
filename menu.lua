@@ -13,7 +13,8 @@ local widget = require "widget"
 --------------------------------------------
 
 -- forward declarations and other locals
-local playBtn
+local playBtn;
+local fgBtn;
 
 -- 'onRelease' event listener for playBtn
 local function onPlayBtnRelease()
@@ -21,6 +22,13 @@ local function onPlayBtnRelease()
 	storyboard.gotoScene( "game", "flipFadeOutIn", 200 )
 	
 	return true	-- indicates successful touch
+end
+
+local function onFgBtnRelease()
+    -- go to game.lua scene
+    storyboard.gotoScene( "Game_FieldGoal", "flipFadeOutIn", 200 )
+
+    return true	-- indicates successful touch
 end
 
 -----------------------------------------------------------------------------------------
@@ -61,10 +69,25 @@ function scene:createScene( event )
 	playBtn.x = display.contentWidth*0.5
 	playBtn.y = display.contentHeight - 175
 
+    -- create a widget button (which will loads game.lua on release)
+    fgBtn = widget.newButton{
+        label="Field Goal Game",
+        labelColor = { default={255}, over={128} },
+        defaultFile="images/ChoosePlayBtn.png",
+        width=250, height=60,
+        onRelease = onFgBtnRelease,	-- event listener function
+        font = fontName,
+        fontSize = 26
+    }
+    fgBtn:setReferencePoint( display.CenterReferencePoint )
+    fgBtn.x = display.contentWidth*0.5
+    fgBtn.y = display.contentHeight - 275
+
 	-- all display objects must be inserted into group
 	group:insert( background )
 	group:insert( titleLogo )
 	group:insert( playBtn )
+    group:insert(fgBtn);
 end
 
 -- Called immediately after scene has moved onscreen:
