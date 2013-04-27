@@ -19,6 +19,22 @@ local scene = storyboard.newScene()
 local widget = require "widget"
 local physics = require("physics")
 
+-- load imagesheet
+local sheetInfo = require("FGBallAnim")
+
+local fgBallSheet = graphics.newImageSheet( "images/fgGame/FGBallAnim.png", sheetInfo:getSheet() )
+
+local fgBallSheetInfo =
+{
+    { name = "forwardSpin",  --name of animation sequence
+        start = 1,  --starting frame index
+        count = 21,  --total number of frames to animate consecutively before stopping or looping
+        time = 200,  --optional, in milliseconds; if not supplied, the sprite is frame-based
+        loopCount = 0,  --optional. 0 (default) repeats forever; a positive integer specifies the number of loops
+        loopDirection = "forward"  --optional, either "forward" (default) or "bounce" which will play forward then backwards through the sequence of frames
+    }
+}
+
 local football;
 local fgRightPost;
 local fgLeftPost;
@@ -35,11 +51,12 @@ local lastFgTime = 1000;
 --Listeners
 local function footballTouched(event)
     if (event.phase == "began") then
-        display.getCurrentStage():setFocus(football);
+        display.getCurrentStage():setFocus(event.target);
     elseif (event.phase == "ended") then
         --physics.setGravity(5, 10);   --Wind
-        football.bodyType = "dynamic";
-        football:applyLinearImpulse(event.xStart - event.x, event.yStart - event.y, football.x, football.y);
+        event.target.bodyType = "dynamic";
+        event.target:applyLinearImpulse(event.xStart - event.x, event.yStart - event.y, football.x, football.y);
+        event.target:play();
         display.getCurrentStage():setFocus(nil);
     end
 end
@@ -98,7 +115,8 @@ function scene:createScene( event )
     physics.setScale(15);
     physics.setDrawMode( "normal" ) -- debug, hybrid, normal
 
-    football = display.newCircle(425, 430, 10);
+    football = display.newSprite( fgBallSheet, fgBallSheetInfo )
+    football.x, football.y = 425, 430;
     physics.addBody(football, "kinematic", {density = 1.0, friction = 0.3, bounce = 0.2});
     football:addEventListener("touch", footballTouched);
     football.isBullet = true;
@@ -150,6 +168,7 @@ function scene:createScene( event )
     popGroup:insert( fgLeftPost )
     popGroup:insert( fgRightPost )
     popGroup:insert(football)
+    --popGroup:insert(football)
 
     popGroup:setReferencePoint( display.CenterReferencePoint )
     popGroup.x = display.contentCenterX
