@@ -116,7 +116,7 @@ function scene:createScene( event )
     physics.setDrawMode( "normal" ) -- debug, hybrid, normal
 
     football = display.newSprite( fgBallSheet, fgBallSheetInfo )
-    football.x, football.y = 425, 430;
+    football.x, football.y = 512, 600;
     physics.addBody(football, "kinematic", {density = 1.0, friction = 0.3, bounce = 0.2});
     football:addEventListener("touch", footballTouched);
     football.isBullet = true;
@@ -127,46 +127,217 @@ function scene:createScene( event )
     uiBackground.y = display.contentCenterY
     group:insert(uiBackground);
 
-    local popContainer = display.newRect(0, 0, 720, 480)
-    popContainer:setReferencePoint( display.TopLeftReferencePoint )
-    popContainer.x, popContainer.y = 0, 0
-    popContainer:setFillColor(140, 140, 140)
-
-    local fgField = display.newImageRect( "images/fgGame/field.png", 704, 464 )
-    fgField:setReferencePoint( display.TopLeftReferencePoint )
-    fgField.x, fgField.y = 8, 8
-
-    local fgEndZone = display.newImageRect( "images/fgGame/endzones/darkBlue.png", 704, 60 )
-    fgEndZone:setReferencePoint( display.TopLeftReferencePoint )
-    fgEndZone.x, fgEndZone.y = 8, 72
-
-    local fgShadow = display.newImageRect( "images/fgGame/fgShadow.png", 130, 43 )
-    fgShadow:setReferencePoint( display.TopLeftReferencePoint )
-    fgShadow.x, fgShadow.y =  (19 + 275), (0 + 8)
-
-    local fgBar = display.newImageRect( "images/fgGame/fgBar.png", 136, 26 )
-    fgBar:setReferencePoint( display.TopLeftReferencePoint )
-    fgBar.x, fgBar.y =  (16 + 275), (33 + 8)
-
-    fgLeftPost = display.newImage( "images/fgGame/fgLeftPost.png", 20, 49 )
-    fgLeftPost:setReferencePoint( display.TopLeftReferencePoint )
-    fgLeftPost.x, fgLeftPost.y =  (0 + 275), (4 + 8)
-    physics.addBody(fgLeftPost, "static", {density = 1.0, friction = 0.3, bounce = 0.2, isSensor = false});
-
-    fgRightPost = display.newImage( "images/fgGame/fgRightPost.png", 20, 49 )
-    fgRightPost:setReferencePoint( display.TopLeftReferencePoint )
-    fgRightPost.x, fgRightPost.y =  (149 + 275), (4 + 8)
-    physics.addBody(fgRightPost, "static", {density = 1.0, friction = 0.3, bounce = 0.2, isSensor = false});
-
-
     local popGroup = display.newGroup()
-    popGroup:insert( popContainer )
-    popGroup:insert( fgField )
-    popGroup:insert( fgEndZone )
-    popGroup:insert( fgShadow )
-    popGroup:insert( fgBar )
-    popGroup:insert( fgLeftPost )
-    popGroup:insert( fgRightPost )
+
+    local fgField = display.newImageRect( "images/fgGame/field.png", 1024, 724 )
+    fgField:setReferencePoint( display.TopLeftReferencePoint )
+    fgField.x, fgField.y = 0, 0
+    popGroup:insert(fgField)
+
+    local fgEndZone = display.newImageRect( "images/fgGame/endzones/darkBlue.png", 1024, 94 )
+    fgEndZone:setReferencePoint( display.TopLeftReferencePoint )
+    fgEndZone.x, fgEndZone.y = 0, 140
+    popGroup:insert(fgEndZone);
+
+
+    --Field Goal SHADOW Graphics
+    local fgShadowBase = display.newImageRect( "images/fgGame/fgShadowBase.png", 16, 18 )
+    fgShadowBase:setReferencePoint( display.TopLeftReferencePoint )
+    fgShadowBase.x, fgShadowBase.y =  78, 46
+
+    local fgShadowBar = display.newImageRect( "images/fgGame/fgShadowBar.png", 80, 8 )
+    fgShadowBar:setReferencePoint( display.TopCenterReferencePoint )
+    fgShadowBar.x, fgShadowBar.y =  85, 42
+
+    local fgShadowLeftPost = display.newImageRect( "images/fgGame/fgShadowLeftPost.png", 19, 38 )
+    fgShadowLeftPost:setReferencePoint( display.TopLeftReferencePoint )
+    fgShadowLeftPost.x, fgShadowLeftPost.y =  26, 10
+
+    local fgShadowRightPost = display.newImageRect( "images/fgGame/fgShadowRightPost.png", 19, 38 )
+    fgShadowRightPost:setReferencePoint( display.TopLeftReferencePoint )
+    fgShadowRightPost.x, fgShadowRightPost.y =  125, 10
+
+    local fgShadowGroup = display.newGroup()
+
+    fgShadowGroup:insert( fgShadowBase )
+    fgShadowGroup:insert( fgShadowBar )
+    fgShadowGroup:insert( fgShadowLeftPost )
+    fgShadowGroup:insert( fgShadowRightPost )
+
+    fgShadowGroup:setReferencePoint( display.TopLeftReferencePoint )
+    fgShadowGroup.x = 451
+    fgShadowGroup.y = 84
+    popGroup:insert(fgShadowGroup);
+
+    --Field Goal Graphics
+    local fgBase = display.newImageRect( "images/fgGame/fgBase.png", 16, 26 )
+    fgBase:setReferencePoint( display.TopLeftReferencePoint )
+    fgBase.x, fgBase.y =  504, 131
+    popGroup:insert(fgBase)
+
+    local fgBar = display.newImageRect( "images/fgGame/fgBar.png", 136, 4 )
+    fgBar:setReferencePoint( display.TopLeftReferencePoint )
+    fgBar.x, fgBar.y =  444, 147
+    popGroup:insert(fgBar)
+
+    fgLeftPost = display.newImageRect( "images/fgGame/fgLeftPost.png", 20, 49 )
+    fgLeftPost:setReferencePoint( display.TopLeftReferencePoint )
+    fgLeftPost.x, fgLeftPost.y =  429, 102
+    physics.addBody(fgLeftPost, "static", {density = 1.0, friction = 0.3, bounce = 0.2, isSensor = false});
+    popGroup:insert(fgLeftPost)
+
+    fgRightPost = display.newImageRect( "images/fgGame/fgRightPost.png", 20, 49 )
+    fgRightPost:setReferencePoint( display.TopLeftReferencePoint )
+    fgRightPost.x, fgRightPost.y =  576, 102
+    physics.addBody(fgRightPost, "static", {density = 1.0, friction = 0.3, bounce = 0.2, isSensor = false});
+    popGroup:insert(fgRightPost)
+
+
+    --DLinePosition
+    local leftDLineman1 = display.newImageRect( "images/fgGame/leftDLineman.png", 26, 60 )
+    leftDLineman1:setReferencePoint( display.TopLeftReferencePoint )
+    leftDLineman1.x, leftDLineman1.y =  376, 490
+    popGroup:insert(leftDLineman1)
+
+    local leftDLineman2 = display.newImageRect( "images/fgGame/leftDLineman.png", 26, 60 )
+    leftDLineman2:setReferencePoint( display.TopLeftReferencePoint )
+    leftDLineman2.x, leftDLineman2.y =  408, 490
+    popGroup:insert(leftDLineman2)
+
+    local leftDLineman3 = display.newImageRect( "images/fgGame/leftDLineman.png", 26, 60 )
+    leftDLineman3:setReferencePoint( display.TopLeftReferencePoint )
+    leftDLineman3.x, leftDLineman3.y =  440, 490
+    popGroup:insert(leftDLineman3)
+
+    local leftDLineman4 = display.newImageRect( "images/fgGame/leftDLineman.png", 26, 60 )
+    leftDLineman4:setReferencePoint( display.TopLeftReferencePoint )
+    leftDLineman4.x, leftDLineman4.y =  468, 490
+    popGroup:insert(leftDLineman4)
+
+    local leftDLineman5 = display.newImageRect( "images/fgGame/leftDLineman.png", 26, 60 )
+    leftDLineman5:setReferencePoint( display.TopLeftReferencePoint )
+    leftDLineman5.x, leftDLineman5.y =  500, 490
+    popGroup:insert(leftDLineman5)
+
+    local rightDLineman1 = display.newImageRect( "images/fgGame/rightDLineman.png", 26, 60 )
+    rightDLineman1:setReferencePoint( display.TopLeftReferencePoint )
+    rightDLineman1.x, rightDLineman1.y =  530, 490
+    popGroup:insert(rightDLineman1)
+
+    local rightDLineman2 = display.newImageRect( "images/fgGame/rightDLineman.png", 26, 60 )
+    rightDLineman2:setReferencePoint( display.TopLeftReferencePoint )
+    rightDLineman2.x, rightDLineman2.y =  560, 490
+    popGroup:insert(rightDLineman2)
+
+    local rightDLineman3 = display.newImageRect( "images/fgGame/rightDLineman.png", 26, 60 )
+    rightDLineman3:setReferencePoint( display.TopLeftReferencePoint )
+    rightDLineman3.x, rightDLineman3.y =  594, 490
+    popGroup:insert(rightDLineman3)
+
+    local rightDLineman4 = display.newImageRect( "images/fgGame/rightDLineman.png", 26, 60 )
+    rightDLineman4:setReferencePoint( display.TopLeftReferencePoint )
+    rightDLineman4.x, rightDLineman4.y =  626, 490
+    popGroup:insert(rightDLineman4)
+
+
+    --DBack Position
+
+    local rightDBack1 = display.newImageRect( "images/fgGame/rightDBack.png", 26, 60 )
+    rightDBack1:setReferencePoint( display.TopLeftReferencePoint )
+    rightDBack1.x, rightDBack1.y =  660, 500
+    popGroup:insert(rightDBack1)
+
+    local rightDBack2 = display.newImageRect( "images/fgGame/rightDBack.png", 26, 60 )
+    rightDBack2:setReferencePoint( display.TopLeftReferencePoint )
+    rightDBack2.x, rightDBack2.y =  576, 470
+    popGroup:insert(rightDBack2)
+
+    --OLine Position
+    local leftOLineman1 = display.newImageRect( "images/fgGame/leftOLineman.png", 30, 70 )
+    leftOLineman1:setReferencePoint( display.TopLeftReferencePoint )
+    leftOLineman1.x, leftOLineman1.y =  376, 520
+    popGroup:insert(leftOLineman1)
+
+    local leftOLineman2 = display.newImageRect( "images/fgGame/leftOLineman.png", 30, 70 )
+    leftOLineman2:setReferencePoint( display.TopLeftReferencePoint )
+    leftOLineman2.x, leftOLineman2.y =  408, 520
+    popGroup:insert(leftOLineman2)
+
+    local leftOLineman3 = display.newImageRect( "images/fgGame/leftOLineman.png", 30, 70 )
+    leftOLineman3:setReferencePoint( display.TopLeftReferencePoint )
+    leftOLineman3.x, leftOLineman3.y =  440, 520
+    popGroup:insert(leftOLineman3)
+
+    local leftOLineman4 = display.newImageRect( "images/fgGame/leftOLineman.png", 30, 70 )
+    leftOLineman4:setReferencePoint( display.TopLeftReferencePoint )
+    leftOLineman4.x, leftOLineman4.y =  472, 520
+    popGroup:insert(leftOLineman4)
+
+    local centerOLineman = display.newImageRect( "images/fgGame/centerOLineman.png", 30, 70 )
+    centerOLineman:setReferencePoint( display.TopLeftReferencePoint )
+    centerOLineman.x, centerOLineman.y =  504, 520
+    popGroup:insert(centerOLineman)
+
+    local rightOLineman1 = display.newImageRect( "images/fgGame/rightOLineman.png", 30, 70 )
+    rightOLineman1:setReferencePoint( display.TopLeftReferencePoint )
+    rightOLineman1.x, rightOLineman1.y =  536, 520
+    popGroup:insert(rightOLineman1)
+
+    local rightOLineman2 = display.newImageRect( "images/fgGame/rightOLineman.png", 30, 70 )
+    rightOLineman2:setReferencePoint( display.TopLeftReferencePoint )
+    rightOLineman2.x, rightOLineman2.y =  568, 520
+    popGroup:insert(rightOLineman2)
+
+    local rightOLineman3 = display.newImageRect( "images/fgGame/rightOLineman.png", 30, 70 )
+    rightOLineman3:setReferencePoint( display.TopLeftReferencePoint )
+    rightOLineman3.x, rightOLineman3.y =  600, 520
+    popGroup:insert(rightOLineman3)
+
+    local rightOLineman4 = display.newImageRect( "images/fgGame/rightOLineman.png", 30, 70 )
+    rightOLineman4:setReferencePoint( display.TopLeftReferencePoint )
+    rightOLineman4.x, rightOLineman4.y =  630, 520
+    popGroup:insert(rightOLineman4)
+
+
+    --Kick Arrow Positions
+    local kickCircle = display.newImageRect( "images/fgGame/kickerCircle.png", 56, 38 )
+    kickCircle:setReferencePoint( display.TopLeftReferencePoint )
+    kickCircle.x, kickCircle.y =  0, 94
+
+    local kickArrowTop = display.newImageRect( "images/fgGame/arrowTop.png", 36, 36 )
+    kickArrowTop:setReferencePoint( display.TopLeftReferencePoint )
+    kickArrowTop.x, kickArrowTop.y =  0, 0
+
+    local kickArrowMiddle = display.newImageRect( "images/fgGame/arrowMiddle.png", 18, 40 )
+    kickArrowMiddle:setReferencePoint( display.TopLeftReferencePoint )
+    kickArrowMiddle.x, kickArrowMiddle.y =  9, 36
+
+    local kickArrowBottom = display.newImageRect( "images/fgGame/arrowBottom.png", 18, 26 )
+    kickArrowBottom:setReferencePoint( display.TopLeftReferencePoint )
+    kickArrowBottom.x, kickArrowBottom.y =  9, 76
+
+    local kickArrowGroup = display.newGroup()
+
+    kickArrowGroup:insert( kickCircle )
+    kickArrowGroup:insert( kickArrowBottom )
+    kickArrowGroup:insert( kickArrowMiddle )
+    kickArrowGroup:insert( kickArrowTop )
+
+    kickArrowGroup:setReferencePoint( display.TopLeftReferencePoint )
+    kickArrowGroup.x = 504
+    kickArrowGroup.y = 520
+    popGroup:insert(kickArrowGroup)
+
+    local holder = display.newImageRect( "images/fgGame/holder.png", 36, 54 )
+    holder:setReferencePoint( display.TopLeftReferencePoint )
+    holder.x, holder.y =  512, 600
+    popGroup:insert(holder)
+
+    local kicker = display.newImageRect( "images/fgGame/kicker.png", 30, 86 )
+    kicker:setReferencePoint( display.TopLeftReferencePoint )
+    kicker.x, kicker.y =  470, 604
+    popGroup:insert(kicker)
+
     popGroup:insert(football)
     --popGroup:insert(football)
 
@@ -182,7 +353,7 @@ function scene:createScene( event )
     transition.to( fgRightPost, { time=300, x=(fgRightPost.x - 65), onComplete=movePostRight } )
     transition.to( fgLeftPost, { time=300, x=(fgLeftPost.x + 65), onComplete=movePostLeft } )
     transition.to( fgBar, { time=300, width=20, onComplete=expandFgBar})
-    transition.to( fgShadow, { time=300, width=20, onComplete=expandFgShadow})
+    --transition.to( fgShadow, { time=300, width=20, onComplete=expandFgShadow})
 end
 
 -- Called immediately after scene has moved onscreen:
@@ -205,16 +376,18 @@ end
 function scene:destroyScene( event )
     local group = self.view
 
-    package.loaded[physics] = nil;
-    physics = nil;
+    --package.loaded[physics] = nil;
+    --physics = nil;
 end
 
 function scene:made(event)
     print("Made!");
+    storyboard.gotoScene( "menu", "flipFadeOutIn", 200 )
 end
 
 function scene:missed(event)
     print("Miss");
+    storyboard.gotoScene( "menu", "flipFadeOutIn", 200 )
 end
 
 -----------------------------------------------------------------------------------------

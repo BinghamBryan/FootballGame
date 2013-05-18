@@ -15,6 +15,8 @@ local widget = require "widget"
 -- forward declarations and other locals
 local playBtn;
 local fgBtn;
+local passBtn;
+local runBtn;
 
 -- 'onRelease' event listener for playBtn
 local function onPlayBtnRelease()
@@ -26,7 +28,24 @@ end
 
 local function onFgBtnRelease()
     -- go to game.lua scene
+    storyboard.purgeScene("Game_FieldGoal");
     storyboard.gotoScene( "Game_FieldGoal", "flipFadeOutIn", 200 )
+
+    return true	-- indicates successful touch
+end
+
+local function onPassBtnRelease()
+    -- go to game.lua scene
+    storyboard.purgeScene("Game_Passing");
+    storyboard.gotoScene( "Game_Passing", "flipFadeOutIn", 200 )
+
+    return true	-- indicates successful touch
+end
+
+local function onRunBtnRelease()
+    -- go to game.lua scene
+    storyboard.purgeScene("Game_Running");
+    storyboard.gotoScene( "Game_Running", "flipFadeOutIn", 200 )
 
     return true	-- indicates successful touch
 end
@@ -83,11 +102,41 @@ function scene:createScene( event )
     fgBtn.x = display.contentWidth*0.5
     fgBtn.y = display.contentHeight - 275
 
+    -- create a widget button (which will loads game.lua on release)
+    passBtn = widget.newButton{
+        label="Passing Game",
+        labelColor = { default={255}, over={128} },
+        defaultFile="images/ChoosePlayBtn.png",
+        width=250, height=60,
+        onRelease = onPassBtnRelease,	-- event listener function
+        font = fontName,
+        fontSize = 26
+    }
+    passBtn:setReferencePoint( display.CenterReferencePoint )
+    passBtn.x = display.contentWidth*0.5
+    passBtn.y = display.contentHeight - 375
+
+    -- create a widget button (which will loads game.lua on release)
+    runBtn = widget.newButton{
+        label="Running Game",
+        labelColor = { default={255}, over={128} },
+        defaultFile="images/ChoosePlayBtn.png",
+        width=250, height=60,
+        onRelease = onRunBtnRelease,	-- event listener function
+        font = fontName,
+        fontSize = 26
+    }
+    runBtn:setReferencePoint( display.CenterReferencePoint )
+    runBtn.x = display.contentWidth*0.5
+    runBtn.y = display.contentHeight - 475
+
 	-- all display objects must be inserted into group
 	group:insert( background )
 	group:insert( titleLogo )
 	group:insert( playBtn )
     group:insert(fgBtn);
+    group:insert(passBtn);
+    group:insert(runBtn);
 end
 
 -- Called immediately after scene has moved onscreen:
